@@ -133,8 +133,8 @@ export function AcceptInviteForm() {
           </div>
           <h2 className="auth-success-title">Akun Berhasil Diaktifkan!</h2>
           <p className="auth-success-message">
-            Selamat datang, <strong>{data.user.name}</strong>! Akun Anda sebagai{" "}
-            <strong>{data.user.role}</strong> telah aktif. Anda akan diarahkan
+            Selamat datang, <strong>{data?.user?.name || 'Pengguna'}</strong>! Akun Anda sebagai{" "}
+            <strong>{data?.user?.role || 'Anggota'}</strong> telah aktif. Anda akan diarahkan
             ke halaman login...
           </p>
           <Link

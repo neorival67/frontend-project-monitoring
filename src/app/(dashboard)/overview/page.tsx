@@ -1,4 +1,4 @@
-import { DashboardOverview } from "@/presentation/features";
+import { DashboardOverview } from "@/presentation/features/DashboardOverview";
 
 export default function OverviewPage() {
   return <DashboardOverview />;

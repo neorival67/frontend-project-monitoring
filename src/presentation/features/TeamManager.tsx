@@ -4,11 +4,13 @@ import React, { useState } from "react";
 import { useSemuaUser } from "@/use-cases/hooks/useUser";
 import { TeamCard } from "@/presentation/components/TeamCard";
 import { TeamModal } from "@/presentation/components/TeamModal";
+import { DeleteConfirmationModal } from "@/presentation/components/DeleteConfirmationModal";
 import type { User } from "@/core/entities";
 
 export function TeamManager() {
   const { data: users, isLoading, isError } = useSemuaUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | undefined>(undefined);
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -24,6 +26,20 @@ export function TeamManager() {
   const handleAdd = () => {
     setSelectedUser(undefined);
     setIsModalOpen(true);
+  };
+
+  const handleDelete = (user: User) => {
+    setSelectedUser(user);
+    setIsDeleteOpen(true);
+  };
+
+  const handleCloseDelete = () => {
+    setIsDeleteOpen(false);
+    setSelectedUser(undefined);
+  };
+
+  const handleDeleteSuccess = () => {
+    handleCloseDelete();
   };
 
   const filteredUsers = safeUsers.filter(u => {
@@ -92,7 +108,7 @@ export function TeamManager() {
         ) : (
           <div className="team-grid">
             {filteredUsers.map(user => (
-              <TeamCard key={user.id} user={user} onEdit={handleEdit} />
+              <TeamCard key={user.id} user={user} onEdit={handleEdit} onDelete={handleDelete} />
             ))}
           </div>
         )}
@@ -101,9 +117,18 @@ export function TeamManager() {
       {isModalOpen && (
         <TeamModal 
           user={selectedUser} 
-          onClose={() => setIsModalOpen(false)} 
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={() => setIsModalOpen(false)}
         />
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        userId={selectedUser?.id}
+        isOpen={isDeleteOpen}
+        onClose={handleCloseDelete}
+        onSuccess={handleDeleteSuccess}
+      />
     </div>
   );
 }

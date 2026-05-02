@@ -11,7 +11,7 @@ export interface User {
   status: UserStatus;
   departemen?: string;
   phone?: string;
-  skills?: string;
+  skills?: string[];
   companyId?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -50,7 +50,7 @@ export interface CreateUserPayload {
   role: UserRole | string;
   departemen?: string;
   phone?: string;
-  skills?: string;
+  skills?: string[];
   companyId?: string;
 }
 
@@ -60,7 +60,7 @@ export interface UpdateUserPayload {
   status?: UserStatus | string;
   departemen?: string;
   phone?: string;
-  skills?: string;
+  skills?: string[];
   companyId?: string;
 }
 

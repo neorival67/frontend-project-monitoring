@@ -341,3 +341,73 @@
 .bg-pink { background: #ec4899; }
 .bg-indigo { background: #6366f1; }
 .bg-teal { background: #14b8a6; }
+
+/* Team Card Actions */
+.tc-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--auth-card-border);
+}
+
+.tc-action-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.tc-action-edit {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+}
+
+.tc-action-edit:hover {
+  background: rgba(99, 102, 241, 0.2);
+}
+
+.tc-action-delete {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.tc-action-delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Delete Confirmation Modal */
+.modal-confirm {
+  text-align: center;
+}
+
+.modal-delete-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.modal-message {
+  color: var(--auth-text-muted);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+/* Danger Button */
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-danger:disabled {
+  background: #f87171;
+  cursor: not-allowed;
+}
+

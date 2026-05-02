@@ -1,13 +1,8 @@
 "use client";
 
-/**
- * Layout: Sidebar
- * Navigasi samping untuk dashboard dengan grouped menu.
- */
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/use-cases/hooks/useAuth";
 import type { UserRole } from "@/core/entities/User";
 
@@ -37,7 +32,7 @@ const navGroups: NavGroup[] = [
     roles: ["ADMIN", "PM"], // Hanya ADMIN & PM yang bisa melihat Master Data
     items: [
       { label: "Client / Vendor", href: "/clients", icon: "🏢" },
-      { label: "Master Tim", href: "/teams", icon: "👥" },
+      { label: "Master Tim", href: "/master-tim", icon: "👥" },
     ],
   },
   {
@@ -58,6 +53,21 @@ export function Sidebar() {
   const toggleGroup = (title: string) => {
     setOpenGroups((prev) => ({ ...prev, [title]: !prev[title] }));
   };
+
+  const [isMounted, setIsMounted] = useState(false);
+
+ useEffect(() => {
+    const timer = setTimeout(() => {
+       setIsMounted(true);
+    }, 0);
+    
+      return () => clearTimeout(timer);
+  }, []);
+
+  if (!isMounted) {
+    return <aside className="w-64 bg-[#11111d] min-h-screen border-r border-gray-800"></aside>; 
+    // ^ Atur class width dan warna agar tampilannya tidak "berkedip" saat render
+  }
 
   const isActive = (href: string) => pathname === href;
 

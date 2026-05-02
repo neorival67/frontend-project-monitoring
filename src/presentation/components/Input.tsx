@@ -1,9 +1,6 @@
 import { InputHTMLAttributes, forwardRef } from "react";
 
-/**
- * Dumb Component: Input
- * Komponen input field yang bisa dipakai ulang.
- */
+
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

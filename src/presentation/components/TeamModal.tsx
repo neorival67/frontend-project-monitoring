@@ -5,9 +5,10 @@ import { useCreateUser, useUpdateUser } from "@/use-cases/hooks/useUser";
 interface TeamModalProps {
   user?: User; // if passed, it's Edit mode
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
-export function TeamModal({ user, onClose }: TeamModalProps) {
+export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
   const isEdit = !!user;
   const createUser = useCreateUser();
   const updateUser = useUpdateUser();
@@ -25,18 +26,34 @@ export function TeamModal({ user, onClose }: TeamModalProps) {
   const [skillInput, setSkillInput] = useState("");
 
   useEffect(() => {
-    if (user) {
-      setFormData({
-        name: user.name || "",
-        role: user.role || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        departemen: user.departemen || "Engineering",
-        status: user.status || "ACTIVE",
-        skills: user.skills ? user.skills.split(",").map(s => s.trim()).filter(Boolean) : [],
-      });
-    }
-  }, [user]);
+    const updateFormData = () => {
+      if (isEdit && user) {
+        setFormData({
+          name: user.name || "",
+          role: user.role || "",
+          email: user.email || "",
+          phone: user.phone || "",
+          departemen: user.departemen || "Engineering",
+          status: user.status || "ACTIVE",
+          skills: user.skills ? user.skills.split(",").map(s => s.trim()).filter(Boolean) : [],
+        });
+      } else if (!isEdit) {
+        // Reset form for add mode
+        setFormData({
+          name: "",
+          role: "",
+          email: "",
+          phone: "",
+          departemen: "Engineering",
+          status: "ACTIVE",
+          skills: [],
+        });
+        setSkillInput("");
+      }
+    };
+
+    updateFormData();
+  }, [user, isEdit]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -63,7 +80,7 @@ export function TeamModal({ user, onClose }: TeamModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const skillsString = formData.skills.join(", ");
+ //   const skillsString = formData.skills.join(", ");
 
     if (isEdit) {
       const payload: UpdateUserPayload = {
@@ -72,11 +89,17 @@ export function TeamModal({ user, onClose }: TeamModalProps) {
         status: formData.status,
         departemen: formData.departemen,
         phone: formData.phone,
-        skills: skillsString,
+       skills: formData.skills,
       };
       updateUser.mutate({ id: user.id, payload }, {
-        onSuccess: () => onClose(),
-        onError: (err: any) => alert(err?.response?.data?.message || "Gagal mengupdate pengguna")
+        onSuccess: () => {
+          onSuccess?.();
+          onClose();
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } };
+          alert(error?.response?.data?.message || "Gagal mengupdate pengguna");
+        }
       });
     } else {
       const payload: CreateUserPayload = {
@@ -85,11 +108,17 @@ export function TeamModal({ user, onClose }: TeamModalProps) {
         role: formData.role || "STAFF",
         departemen: formData.departemen,
         phone: formData.phone,
-        skills: skillsString,
+        skills: formData.skills,
       };
       createUser.mutate(payload, {
-        onSuccess: () => onClose(),
-        onError: (err: any) => alert(err?.response?.data?.message || "Gagal menambah pengguna")
+        onSuccess: () => {
+          onSuccess?.();
+          onClose();
+        },
+        onError: (err: unknown) => {
+          const error = err as { response?: { data?: { message?: string } } };
+          alert(error?.response?.data?.message || "Gagal menambah pengguna");
+        }
       });
     }
   };

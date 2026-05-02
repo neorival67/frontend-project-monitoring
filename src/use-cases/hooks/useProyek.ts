@@ -1,13 +1,9 @@
 "use client";
-
+import apiClient from "@/infrastructure/api/apiClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as proyekRepo from "@/infrastructure/repositories/proyek.repo";
 import type { Proyek, CreateProyekPayload } from "@/core/entities";
 
-/**
- * Hook: useProyek
- * Mengelola state data proyek.
- */
 
 const PROYEK_QUERY_KEY = ["proyek"] as const;
 

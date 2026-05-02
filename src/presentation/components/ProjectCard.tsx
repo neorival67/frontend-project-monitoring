@@ -1,170 +1,230 @@
+"use client";
+
 import React from "react";
-import type { Proyek } from "@/core/entities";
+import Link from "next/link";
+import { FolderGit2, ChevronRight } from "lucide-react";
+import { Client } from '../../core/entities/Client';
 
 interface ProjectCardProps {
-  proyek: Proyek;
-  onClick?: () => void;
+  proyek: Record<string, unknown>; 
 }
 
-export function ProjectCard({ proyek, onClick }: ProjectCardProps) {
-  // Helper for formatting date
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return "-";
+interface TeamMember {
+  nama?: string;
+  name?: string;
+}
+
+// Helper functions
+const safeString = (value: unknown): string => {
+  return typeof value === 'string' ? value : '';
+};
+
+const getStatusColor = (status: unknown): string => {
+  const statusStr = safeString(status).toLowerCase();
+  if (statusStr.includes('pelaksanaan') || statusStr.includes('ongoing') || statusStr.includes('berjalan')) 
+    return "bg-purple-100 text-purple-700";
+  if (statusStr.includes('planning') || statusStr.includes('perencanaan')) 
+    return "bg-blue-100 text-blue-700";
+  if (statusStr.includes('closing') || statusStr.includes('selesai') || statusStr.includes('penutupan')) 
+    return "bg-orange-100 text-orange-700";
+  return "bg-slate-100 text-slate-600";
+};
+
+const getClientName = (proyek: Record<string, unknown>): string => {
+  const klien = proyek.klien as Record<string, unknown> | undefined;
+  const client = proyek.client as Record<string, unknown> | undefined;
+  
+  if (klien?.nama || klien?.name) return safeString(klien.nama || klien.name);
+  if (client?.nama || client?.name) return safeString(client.nama || client.name);
+  
+  // if (typeof proyek.klien === 'string') return proyek.klien;
+  // if (typeof proyek.client === 'string') return proyek.client as string;
+
+  if (typeof proyek.klien === 'string') return proyek.klien;
+  if (typeof proyek.client === 'string') return proyek.client;
+  
+  // Fallback tambahan, siapa tahu backend mengirim clientName / namaKlien langsung
+  if (typeof proyek.clientName === 'string') return proyek.clientName;
+  if (typeof proyek.namaKlien === 'string') return proyek.namaKlien;
+  return '-';
+};
+
+const getTeamMembers = (proyek: Record<string, any>): any[] => {
+  if (Array.isArray(proyek.teams)) return proyek.teams; 
+  if (Array.isArray(proyek.tim)) return proyek.tim;
+  if (Array.isArray(proyek.team)) return proyek.team;
+  if (Array.isArray(proyek.teamMembers)) return proyek.teamMembers;
+  return [];
+};
+
+const formatDate = (value: unknown): string => {
+  try {
+    if (!value) return '?';
+    const dateStr = safeString(value);
+    if (!dateStr) return '?';
     const date = new Date(dateStr);
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
+    if (isNaN(date.getTime())) return '?';
+    return date.toLocaleDateString('id-ID', {month:'short', year:'numeric'});
+  } catch {
+    return '?';
+  }
+};
 
-  // Helper for formatting currency
-  const formatRupiah = (amount: number | string) => {
-    const num = typeof amount === "string" ? parseInt(amount, 10) : amount;
-    if (isNaN(num)) return "Rp 0";
-    if (num >= 1_000_000_000) return `Rp ${(num / 1_000_000_000).toFixed(1)}M`;
-    if (num >= 1_000_000) return `Rp ${(num / 1_000_000).toFixed(0)}Jt`;
-    return `Rp ${num.toLocaleString("id-ID")}`;
-  };
-
-  // Status mapping
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "perencanaan":
-      case "planning":
-        return "status-planning";
-      case "pelaksanaan":
-      case "ongoing":
-      case "berjalan":
-        return "status-pelaksanaan";
-      case "closing":
-      case "penutupan":
-      case "selesai":
-        return "status-closing";
-      case "inisiasi":
-        return "status-inisiasi";
-      default:
-        return "status-default";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    if (!status) return "Unknown";
-    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
-  };
-
-  // Calculate days left
-  const calculateDaysLeft = (endDateStr: string) => {
-    if (!endDateStr) return { text: "-", isLate: false };
-    const end = new Date(endDateStr);
-    const now = new Date();
-    const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+const calculateDaysLeft = (endDate: unknown): { text: string; isLate: boolean } => {
+  try {
+    if (!endDate) return { text: 'Belum diset', isLate: false };
+    const dateStr = safeString(endDate);
+    if (!dateStr) return { text: 'Belum diset', isLate: false };
+    const end = new Date(dateStr);
+    if (isNaN(end.getTime())) return { text: 'Belum diset', isLate: false };
+    const today = new Date();
+    const diffDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     if (diffDays < 0) {
       return { text: `${Math.abs(diffDays)} hari terlambat`, isLate: true };
     }
     return { text: `${diffDays} hari tersisa`, isLate: false };
-  };
+  } catch {
+    return { text: 'Belum diset', isLate: false };
+  }
+};
 
-  const timeInfo = calculateDaysLeft(proyek.endDate);
+
+
+export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek }) => {
+  // Derived values
+  const clientName = getClientName(proyek);
+  const teamMembers = getTeamMembers(proyek);
+  //debug
+  console.log("ISI DATA PROYEK:", proyek);
+  const status = safeString(proyek.status);
+  const statusColor = getStatusColor(proyek.status);
+  const displayName = safeString(proyek.nama || proyek.name || 'Project Name');
+  const description = safeString(proyek.deskripsi || proyek.description || 'Pengembangan proyek sesuai dengan kesepakatan...');
+  const displayCode = safeString(proyek.kode || proyek.code || (typeof proyek.id === 'string' ? proyek.id.substring(0, 4) : ''));
   
-  // Mock progress and budget used (since not in API yet)
-  const progress = proyek.progres ?? Math.floor(Math.random() * 100);
-  const budgetNum = typeof proyek.budget === "string" ? parseInt(proyek.budget, 10) : proyek.budget;
-  const budgetUsed = Math.floor((budgetNum || 0) * (progress / 100)); // mock
-  const budgetPercent = budgetNum ? (budgetUsed / budgetNum) * 100 : 0;
+  // 2. FIX PROGRESS: Hitung rata-rata kalau ada relasi activities dari backend
+  let progress = Number(proyek.progress || proyek.progressPercentage || 0);
+  
+  // Fallback: Kalau dari backend ada array aktivitas, kita hitung rata-ratanya
+  const arrAktivitas = (proyek.activities || proyek.aktivitas) as any[];
+  if (progress === 0 && Array.isArray(arrAktivitas) && arrAktivitas.length > 0) {
+    const totalProg = arrAktivitas.reduce((sum, act) => sum + (Number(act.progress) || 0), 0);
+    progress = Math.round(totalProg / arrAktivitas.length);
+  }
 
-  const teamMembers = proyek.teams || [];
-  const displayTeams = teamMembers.slice(0, 4);
-  const extraTeams = teamMembers.length > 4 ? teamMembers.length - 4 : 0;
+  // 3. FIX BUDGET: Pastikan baca budget dari backend
+  const budget = Number(proyek.budget || proyek.budgetTotal || 0);
+  const budgetTerpakai = Number(proyek.budgetTerpakai || proyek.budgetUsed || proyek.budgetSpent || 0);
+  const budgetPercentage = budget > 0 ? Math.round((budgetTerpakai / budget) * 100) : 0;
+  
+  const startDate = formatDate(proyek.tanggalMulai || proyek.startDate);
+  const endDate = formatDate(proyek.tanggalSelesai || proyek.endDate);
+  const daysLeft = calculateDaysLeft(proyek.tanggalSelesai || proyek.endDate);
+  
 
   return (
-    <div className="project-card" onClick={onClick}>
-      <div className="project-card-icon-wrap">
-        <div className="project-card-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-            <line x1="9" y1="14" x2="15" y2="14"></line>
-          </svg>
+    <Link href={`/proyek/${proyek.id}`} className="block group">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 relative">
+        
+        <div className="absolute right-6 top-6 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
+          <ChevronRight className="w-5 h-5 text-blue-500" />
+        </div>
+
+        <div className="flex gap-5">
+          <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+            <FolderGit2 className="w-6 h-6" />
+          </div>
+
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-1">
+              <span className="text-xs font-semibold text-slate-400">
+                PRJ-{displayCode}
+              </span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold tracking-wide uppercase ${statusColor}`}>
+                {status || 'BERJALAN'}
+              </span>
+            </div>
+            
+            <h3 className="text-lg font-bold text-blue-600 dark:text-blue-400 group-hover:underline decoration-2 underline-offset-2">
+              {displayName}
+            </h3>
+            <p className="text-sm text-slate-500 mt-1 line-clamp-1">
+              {description}
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">🏢 Client</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1">{clientName}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">📅 Timeline</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mt-1">
+                  {startDate} — {endDate}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">👥 Tim</p>
+                <div className="flex -space-x-2 mt-1">
+                  {teamMembers.slice(0, 3).map((t: any, i: number) => {
+                    // Berdasarkan JSON-mu, namanya ada di t.user.name
+                    const namaAnggota = t.user?.name || t.name || t.nama || 'U';
+
+                    return (
+                      <div 
+                        key={i} 
+                        title={namaAnggota} // Menampilkan nama saat di-hover
+                        className="w-6 h-6 rounded-full bg-blue-500 border-2 border-white dark:border-slate-900 text-[9px] font-bold text-white flex items-center justify-center uppercase"
+                      >
+                        {namaAnggota.charAt(0)}
+                      </div>
+                    );
+                  })}
+                  {teamMembers.length > 3 && (
+                    <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white dark:border-slate-900 text-[9px] font-bold text-slate-600 flex items-center justify-center">
+                      +{teamMembers.length - 3}
+                    </div>
+                  )}
+                  {teamMembers.length === 0 && <span className="text-xs text-slate-400">Belum ada</span>}
+                </div>
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">⏳ Sisa Waktu</p>
+                <p className={`text-sm font-semibold mt-1 ${daysLeft.isLate ? 'text-rose-600' : 'text-slate-800 dark:text-slate-200'}`}>
+                  {daysLeft.text}
+                </p>
+              </div>
+            </div>
+
+            <div className="h-px bg-slate-100 dark:bg-slate-800 my-4 w-full"></div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <div className="flex justify-between text-xs font-medium mb-1">
+                  <span className="text-slate-500">Progress</span>
+                  <span className="text-slate-800 dark:text-slate-200">{progress}%</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-blue-600 h-full rounded-full" style={{ width: `${progress}%` }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-xs font-medium mb-1">
+                  <span className="text-slate-500">Budget Terpakai</span>
+                  <span className="text-slate-800 dark:text-slate-200">{budgetPercentage}%</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${budgetPercentage}%` }}></div>
+                </div>
+                <p className="text-[10px] text-slate-400 mt-1 text-right">
+                  Rp {(budgetTerpakai/1000000).toFixed(1)}Jt / Rp {(budget/1000000).toFixed(1)}Jt
+                </p>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
-      
-      <div className="project-card-content">
-        <div className="project-card-header">
-          <div className="project-card-meta">
-            <span className="project-id">{proyek.id.substring(0, 8).toUpperCase()}</span>
-            <span className={`project-status ${getStatusColor(proyek.status)}`}>
-              <span className="status-dot"></span>
-              {getStatusLabel(proyek.status)}
-            </span>
-          </div>
-          <svg className="chevron-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </div>
-
-        <h3 className="project-title">{proyek.name}</h3>
-        <p className="project-desc">{proyek.description?.length > 80 ? proyek.description.substring(0, 80) + "..." : proyek.description}</p>
-
-        <div className="project-details-grid">
-          <div className="detail-item">
-            <span className="detail-label">🏢 Client</span>
-            <span className="detail-value">{proyek.client?.name || "-"}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">📅 Timeline</span>
-            <span className="detail-value">{formatDate(proyek.startDate)} — {formatDate(proyek.endDate)}</span>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">👥 Tim</span>
-            <div className="team-avatars">
-              {displayTeams.length > 0 ? (
-                displayTeams.map((t, idx) => (
-                  <div key={t.id || idx} className={`avatar bg-color-${idx % 5}`}>
-                    {t.user?.name ? t.user.name.charAt(0).toUpperCase() : "?"}
-                  </div>
-                ))
-              ) : (
-                <span className="text-sm text-gray-400">Belum ada tim</span>
-              )}
-              {extraTeams > 0 && (
-                <div className="avatar avatar-more">+{extraTeams}</div>
-              )}
-            </div>
-          </div>
-          <div className="detail-item">
-            <span className="detail-label">Sisa Waktu</span>
-            <span className={`detail-value ${timeInfo.isLate ? "text-danger" : "text-muted"}`}>
-              {timeInfo.text}
-            </span>
-          </div>
-        </div>
-
-        <div className="project-progress-row">
-          <div className="progress-group">
-            <div className="progress-labels">
-              <span>Progress</span>
-              <span>{progress}%</span>
-            </div>
-            <div className="progress-bar-bg">
-              <div className="progress-bar-fill fill-primary" style={{ width: `${progress}%` }}></div>
-            </div>
-          </div>
-          <div className="progress-group">
-            <div className="progress-labels">
-              <span>Budget Terpakai</span>
-              <span>{Math.round(budgetPercent)}%</span>
-            </div>
-            <div className="progress-bar-bg">
-              <div className="progress-bar-fill fill-success" style={{ width: `${budgetPercent}%` }}></div>
-            </div>
-            <div className="progress-subtext">
-              {formatRupiah(budgetUsed)} / {formatRupiah(budgetNum)}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Link>
   );
-}
+};

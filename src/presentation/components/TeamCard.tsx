@@ -4,9 +4,10 @@ import type { User } from "@/core/entities";
 interface TeamCardProps {
   user: User;
   onEdit: (user: User) => void;
+  onDelete?: (user: User) => void;
 }
 
-export function TeamCard({ user, onEdit }: TeamCardProps) {
+export function TeamCard({ user, onEdit, onDelete }: TeamCardProps) {
   // Extract initials for avatar
   const getInitials = (name: string) => {
     if (!name) return "?";
@@ -43,8 +44,8 @@ export function TeamCard({ user, onEdit }: TeamCardProps) {
   const remainingSkills = skills.length > 3 ? skills.length - 3 : 0;
 
   return (
-    <div className="team-card" onClick={() => onEdit(user)}>
-      <div className="tc-header">
+    <div className="team-card">
+      <div className="tc-header" onClick={() => onEdit(user)}>
         <div className={`tc-avatar ${getColorClass(user.name)}`}>
           {getInitials(user.name)}
         </div>
@@ -94,6 +95,30 @@ export function TeamCard({ user, onEdit }: TeamCardProps) {
         </div>
       )}
 
+      {onDelete && (
+        <div className="tc-actions">
+          <button
+            className="tc-action-btn tc-action-edit"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(user);
+            }}
+            title="Edit"
+          >
+            ✎
+          </button>
+          <button
+            className="tc-action-btn tc-action-delete"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(user);
+            }}
+            title="Hapus"
+          >
+            🗑️
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { userRepo } from "@/infrastructure/repositories";
+import { getSemuaUser, getUserById, createUser, updateUser, deleteUser } from "@/infrastructure/repositories";
 import type { CreateUserPayload, UpdateUserPayload } from "@/core/entities";
 
 /**
@@ -15,14 +15,14 @@ export const USER_QUERY_KEYS = {
 export function useSemuaUser() {
   return useQuery({
     queryKey: USER_QUERY_KEYS.all,
-    queryFn: userRepo.getSemuaUser,
+    queryFn: getSemuaUser,
   });
 }
 
 export function useUserDetail(id: string) {
   return useQuery({
     queryKey: USER_QUERY_KEYS.detail(id),
-    queryFn: () => userRepo.getUserById(id),
+    queryFn: () => getUserById(id),
     enabled: !!id,
   });
 }
@@ -31,7 +31,7 @@ export function useCreateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: CreateUserPayload) => userRepo.createUser(payload),
+    mutationFn: (payload: CreateUserPayload) => createUser(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.all });
     },
@@ -43,7 +43,7 @@ export function useUpdateUser() {
 
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateUserPayload }) =>
-      userRepo.updateUser(id, payload),
+      updateUser(id, payload),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.all });
       queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.detail(variables.id) });
@@ -55,7 +55,7 @@ export function useDeleteUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => userRepo.deleteUser(id),
+    mutationFn: (id: string) => deleteUser(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: USER_QUERY_KEYS.all });
     },
