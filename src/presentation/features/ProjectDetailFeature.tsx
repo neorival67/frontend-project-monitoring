@@ -9,8 +9,12 @@ import { useProyekDetail } from '@/use-cases/hooks/useProyek';
 import { TabOverview } from './tabs/TabOverview';
 import { TabPlanningGantt } from './tabs/TabPlanningGantt';
 import { TabMonitoring } from './tabs/TabMonitoring';
-// import { TabApproval } from './tabs/TabApproval';
-// import { TabClosing } from './tabs/TabClosing';
+import { TabApproval } from './tabs/TabApproval';
+import { userAgent } from 'next/server';
+import TabClosingProyek from './tabs/TabClosingProyek'; 
+import { Client } from '../../core/entities/Client';
+import { ClientVendor, ClosingProyek } from '../../core/entities/Proyek';
+import { active } from 'd3';
 
 export const ProjectDetailFeature = () => {
   const params = useParams();
@@ -50,6 +54,7 @@ export const ProjectDetailFeature = () => {
   const deliverables = proyek.deliverables || proyek.dokumen || [];
   const clientName = proyek.klien?.nama || proyek.client?.name || proyek.klien?.name || '-';
   const LogAktivitas = proyek.LogAktivitas || proyek.logAktivitas || [];
+  const Approval = proyek.ReviewApproval || [];
 
   return (
     <div className="w-full space-y-6 pb-10">
@@ -107,6 +112,7 @@ export const ProjectDetailFeature = () => {
             proyek={proyek} 
             activities={activities} 
             team={team} 
+            ClientName = {clientName}
             risks={risks} 
             deliverables={deliverables} 
           />
@@ -122,7 +128,21 @@ export const ProjectDetailFeature = () => {
        {activeTab === 'monitoring' && (
           <TabMonitoring activities={activities} />
         )}
-        {/* Render tab lainnya di sini... */}
+
+        {activeTab === 'approval' && (
+          <TabApproval 
+            activities={activities} 
+            currentUser={User} 
+          />
+        )}
+
+        {activeTab === 'closing' && (
+          <TabClosingProyek
+            proyekId={projectId}
+            initialActivities={activities}
+          />
+        )}
+        {/* Render tab lainnya di sini... */} 
       </div>
 
     </div>

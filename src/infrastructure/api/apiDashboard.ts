@@ -1,4 +1,3 @@
-// File: src/infrastructure/api/apiDashboard.ts
 import apiClient from "./apiClient";
 
 export const apiDashboard = {

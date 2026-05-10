@@ -110,24 +110,80 @@ export interface LogAktivitasPayload {
 }
 //deliverable
 export interface Deliverable {
+  reviewApproval: ReviewApproval;
   id: string;
-  aktivitasId: string;
-  nama: string;
-  file?: string;
+  proyekId: string;        
+  aktivitasId?: string | null;
+  title: string;           
+  description?: string | null;
   status: StatusDeliverable;
   createdAt: string;
   updatedAt: string;
+  attachments?: Attachment; 
+  reviews?: ReviewApproval[];
+}
+export interface CreateDeliverablePayload {
+  proyekId: string;        
+  aktivitasId?: string;
+  title: string;           
+  description?: string;
 }
 
-export type StatusDeliverable = "draft" | "submitted" | "approved" | "rejected";
+export type StatusDeliverable =
+  | "SUBMITTED"   
+  | "APPROVED"
+  | "REJECTED"
+  | string;
+ 
 
 //approval
 export interface ReviewApproval {
   id: string;
   deliverableId: string;
   reviewerId: string;
-  status: "approved" | "rejected" | "pending";
-  catatan?: string;
-  tanggalReview: string;
+  status: StatusApproval;
+  comments?: string | null; 
+  reviewDate: string;
+  reviewer?: User;
+  deliverable?: Deliverable;
 }
 
+export interface CreateReviewPayload {
+  deliverableId: string;
+  reviewerId: string;
+  status: StatusApproval;
+  comments?: string;
+}
+
+export interface Attachment {
+  id: string;
+  deliverableId: string;
+  fileName: string;
+  fileUrl: string;
+  fileType?: string | null;
+  createdAt: string;
+}
+
+export type StatusApproval = "APPROVED" | "REJECTED" ;
+
+
+// closing proyek
+export interface ClosingProyek {
+  id: string;
+  proyekId: string;
+  finalReportUrl?: string | null;
+  handoverDate?: string | null;
+  notes?: string | null;
+  status: string;
+  bastUrl: string; 
+  bastFileName: string;         
+  createdAt: string;
+  updatedAt: string;
+  proyek?: Proyek;
+}
+ 
+export interface CreateClosingPayload {
+  proyekId: string;
+  handoverDate?: string;
+  notes?: string;
+}

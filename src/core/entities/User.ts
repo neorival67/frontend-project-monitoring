@@ -17,6 +17,15 @@ export interface User {
   updatedAt?: string;
 }
 
+export interface UserApproval {
+  ReviewerId: User;
+  name: User;
+  email: User;
+  role : User;
+  status: User;
+  companyId: User;
+}
+
 export type UserRole = "ADMIN" | "PM" | "VENDOR" | "STAFF" | "CLIENT";
 
 export type UserStatus = "ACTIVE" | "PENDING" | "INACTIVE";

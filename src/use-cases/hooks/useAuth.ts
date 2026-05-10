@@ -50,8 +50,8 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) =>
       authRepo.login(credentials),
-    onSuccess: (data) => {
-      localStorage.setItem("accessToken", data.accessToken);
+    onSuccess: (data:any) => {
+      localStorage.setItem("accessToken", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
       queryClient.setQueryData(AUTH_QUERY_KEY, data.user);
       router.push("/proyek");
