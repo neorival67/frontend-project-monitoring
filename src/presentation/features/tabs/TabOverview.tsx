@@ -30,13 +30,25 @@ export const TabOverview: React.FC<TabOverviewProps> = ({
   const criticalRisks = risks.filter((r) => r.tingkat === 'kritis').length;
 
   // 3. Kalkulasi Deliverables
-  const approvedDeliverables = deliverables.filter((d) => d.status === 'approved').length;
+const approvedDeliverables = deliverables.filter((d) => {
+    return d.status && d.status.toLowerCase() === 'approved';
+  }).length;
 
   // 4. Kalkulasi Budget
-  // Catatan: Interface Proyek saat ini tidak memiliki 'budgetTerpakai', jadi kita set default ke 0
-  // Jika di masa depan backend menambahkan field ini, kamu bisa mengubahnya.
+ 
   const budgetTotal = Number(proyek.budget || 0);
-  const budgetTerpakai = 0; // Ganti dengan proyek.budgetTerpakai jika API sudah support
+
+  const budgetTerpakai = activities.reduce((total, act) => {
+  const persentaseBobot = Number(act.weight || 0) / 100;
+  const budgetAktivitas = budgetTotal * persentaseBobot; 
+    
+  const persentaseProgres = Number(act.progress || 0) / 100;
+  const realisasiAktivitas = budgetAktivitas * persentaseProgres;
+
+    return total + realisasiAktivitas;
+  }, 0);
+
+  // Hitung persentasenya
   const budgetPercentage = budgetTotal > 0 ? Math.round((budgetTerpakai / budgetTotal) * 100) : 0; 
 
   const chartData = activities.map((act: any) => {
@@ -63,8 +75,8 @@ export const TabOverview: React.FC<TabOverviewProps> = ({
     });
 
   // 5. Informasi Klien (Menggunakan tipe ClientVendor dari entitas Proyek)
-  const clientName = proyek.client?.nama || '-';
-  const clientContact = proyek.client?.kontak || '-';
+  const clientName = proyek?.client?.name || proyek?.client?.nama || proyek?.clientName || '-';
+  const clientContact = proyek?.client?.kontak || proyek?.client?.contactPerson || '-';
   const clientEmail = proyek.client?.email || '-';
 
   // Helper function untuk format tanggal
@@ -226,7 +238,7 @@ export const TabOverview: React.FC<TabOverviewProps> = ({
                   <div key={act.id}>
                     <div className="flex justify-between items-center mb-1.5">
                       <span className="text-xs font-medium text-slate-700 line-clamp-1 pr-2">
-                        {act.nama}
+                        {act.name}
                       </span>
                       <span className="text-[10px] text-slate-400 font-semibold">{statusText}</span>
                     </div>

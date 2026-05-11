@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { CheckCircle2, Clock, Upload, FileText, Check, Loader2 } from "lucide-react";
 import AttachmentModal from "@/presentation/components/AttachmentModal";
 import type { Aktivitas } from "@/core/entities/Proyek"; 
@@ -17,8 +17,22 @@ export default function TabClosingProyek({
   initialActivities,
 }: TabClosingProyekProps) {
   const [activities, setActivities] = useState<Aktivitas[]>(initialActivities);
-  const [verifiedIds, setVerifiedIds] = useState<Set<string>>(new Set());
+  const storageKey = `verified-activities-${proyekId}`;
+  const [verifiedIds, setVerifiedIds] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        return new Set(JSON.parse(saved));
+      }
+    }
+    return new Set();
+  });
   
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(verifiedIds)));
+  }, [verifiedIds, storageKey]);
+
+
   const [bastFileName, setBastFileName] = useState<string | null>(null);
   const [isUploadingBast, setIsUploadingBast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +45,8 @@ export default function TabClosingProyek({
   const totalActivities = activities.length;
   const verifiedCount = verifiedIds.size;
   const progressPercentage = totalActivities === 0 ? 0 : Math.round((verifiedCount / totalActivities) * 100);
+
+
 
   const handleVerify = (id: string) => {
     setVerifiedIds((prev) => {
@@ -64,31 +80,37 @@ export default function TabClosingProyek({
   };
 
   const handleSubmitClosing = async () => {
-  if (verifiedCount !== totalActivities) {
-    setModalContent({
-      title: "Proyek Ditutup!",
-      message: "Semua aktivitas telah diverifikasi dan proyek resmi dinyatakan selesai."
-    });
-    setIsSuccessModalOpen(true);
-    return;
-  }
-
-  try {
-    const response = await ClosingRepository.submitClosing({
-      proyekId,
-      handoverDate: new Date().toISOString(),
-      notes: "Proyek diselesaikan dan diverifikasi.",
-    });
-
-    if (response) {
-      alert("Proyek berhasil ditutup!");
-      
+    if (verifiedCount !== totalActivities) {
+      alert("Semua aktivitas harus diverifikasi sebelum menutup proyek!");
+      return;
     }
-  } catch (error) {
-    console.error("Gagal melakukan closing proyek", error);
-    alert("Terjadi kesalahan saat menutup proyek.");
-  }
-};
+
+    try {
+      const response = await ClosingRepository.submitClosing({
+        proyekId,
+        handoverDate: new Date().toISOString(),
+        notes: "Proyek diselesaikan dan diverifikasi.",
+      });
+
+      if (response) {
+        localStorage.removeItem(storageKey); 
+        
+        setModalContent({
+          title: "Proyek Ditutup!",
+          message: "Semua aktivitas telah diverifikasi dan proyek resmi dinyatakan selesai."
+        });
+        setIsSuccessModalOpen(true);
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
+    } catch (error: any) {
+      const pesanBackend = error.response?.data?.message || error.response?.data?.error || error.message;
+      alert(`❌ Gagal Menutup Proyek: \n${JSON.stringify(pesanBackend, null, 2)}`);
+    }
+  };
+
 
   return (
   <div className="space-y-6">

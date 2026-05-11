@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useSemuaProyek } from "@/use-cases/hooks/useProyek";
 import { ProjectCard } from "@/presentation/components/ProjectCard";
 import { CreateProjectModal } from "@/presentation/components/CreateProjectModal"; 
+import { deleteProyek } from "@/infrastructure/repositories/proyek.repo";
 
 const getStatusValue = (proyek: Record<string, unknown>): string => {
   const status = proyek.status;
@@ -31,6 +32,7 @@ const isStatusMatching = (status: string, filterStatus: string): boolean => {
 };
 
 export function ProjectManager() {
+ 
   const { data: response, isLoading, isError } = useSemuaProyek();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -50,6 +52,30 @@ export function ProjectManager() {
     if (!isStatusMatching(getStatusValue(p), filterStatus)) return false;
     return true;
   });
+  
+ const handleDeleteProject = async (id: string, namaProyek: string) => {
+    const confirmDelete = window.confirm(`Yakin mau menghapus proyek "${namaProyek}"?\nSemua aktivitas di dalamnya akan hilang!`);
+    
+    if (confirmDelete) {
+      try {
+        // 🔥 INI DIA! Langsung panggil fungsi deleteProyek dari repo lu
+        await deleteProyek(id); 
+        
+        alert("✅ Proyek berhasil dihapus permanen!");
+        
+        window.location.reload();
+
+      } catch (error: any) {
+        const Backendmsg = error.response?.data?.message || error.response?.data?.error || error.message;
+        alert(`❌ Gagal menghapus proyek: \n${Backendmsg}`);
+      }
+    }
+  };
+
+  const handleEditProject = (proyek: Record<string, unknown>) => {
+    console.log("Tombol edit ditekan untuk proyek:", proyek);
+    alert(`Nanti ini ngebuka modal edit untuk proyek: ${proyek.nama || proyek.name}`);
+  };
 
   return (
     <div className="w-full pb-10">
@@ -129,7 +155,14 @@ export function ProjectManager() {
         ) : (
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {filteredProjects.map((proyek: Record<string, unknown>) => (
-              <ProjectCard key={String(proyek.id)} proyek={proyek} />
+              
+              <ProjectCard 
+                key={String(proyek.id)} 
+                proyek={proyek} 
+                onDelete={handleDeleteProject}
+                onEdit={handleEditProject} 
+              />
+
             ))}
           </div>
         )}

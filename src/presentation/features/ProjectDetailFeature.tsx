@@ -12,7 +12,7 @@ import { TabMonitoring } from './tabs/TabMonitoring';
 import { TabApproval } from './tabs/TabApproval';
 import { userAgent } from 'next/server';
 import TabClosingProyek from './tabs/TabClosingProyek'; 
-import { Client } from '../../core/entities/Client';
+import { Client } from '@/core/entities/Client';
 import { ClientVendor, ClosingProyek } from '../../core/entities/Proyek';
 import { active } from 'd3';
 
@@ -52,7 +52,7 @@ export const ProjectDetailFeature = () => {
   const team = proyek.tim || proyek.teamMember || proyek.users || [];
   const risks = proyek.risks || proyek.risiko || []; 
   const deliverables = proyek.deliverables || proyek.dokumen || [];
-  const clientName = proyek.klien?.nama || proyek.client?.name || proyek.klien?.name || '-';
+  const clientName = proyek.client?.name || proyek.Client.name;
   const LogAktivitas = proyek.LogAktivitas || proyek.logAktivitas || [];
   const Approval = proyek.ReviewApproval || [];
 

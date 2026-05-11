@@ -2,23 +2,15 @@
 
 import React from "react";
 import Link from "next/link";
-import { FolderGit2, ChevronRight } from "lucide-react";
-import { Client } from '../../core/entities/Client';
+import { FolderGit2, ChevronRight, Edit2, Trash2 } from "lucide-react";
 
 interface ProjectCardProps {
-  proyek: Record<string, unknown>; 
+  proyek: Record<string, any>; 
+  onEdit?: (proyek: any) => void;
+  onDelete?: (id: string, namaProyek: string) => void;
 }
 
-interface TeamMember {
-  nama?: string;
-  name?: string;
-}
-
-// Helper functions
-const safeString = (value: unknown): string => {
-  return typeof value === 'string' ? value : '';
-};
-
+const safeString = (value: unknown): string => typeof value === 'string' ? value : '';
 const getStatusColor = (status: unknown): string => {
   const statusStr = safeString(status).toLowerCase();
   if (statusStr.includes('pelaksanaan') || statusStr.includes('ongoing') || statusStr.includes('berjalan')) 
@@ -29,26 +21,17 @@ const getStatusColor = (status: unknown): string => {
     return "bg-orange-100 text-orange-700";
   return "bg-slate-100 text-slate-600";
 };
-
 const getClientName = (proyek: Record<string, unknown>): string => {
   const klien = proyek.klien as Record<string, unknown> | undefined;
   const client = proyek.client as Record<string, unknown> | undefined;
-  
   if (klien?.nama || klien?.name) return safeString(klien.nama || klien.name);
   if (client?.nama || client?.name) return safeString(client.nama || client.name);
-  
-  // if (typeof proyek.klien === 'string') return proyek.klien;
-  // if (typeof proyek.client === 'string') return proyek.client as string;
-
   if (typeof proyek.klien === 'string') return proyek.klien;
   if (typeof proyek.client === 'string') return proyek.client;
-  
-  // Fallback tambahan, siapa tahu backend mengirim clientName / namaKlien langsung
   if (typeof proyek.clientName === 'string') return proyek.clientName;
   if (typeof proyek.namaKlien === 'string') return proyek.namaKlien;
   return '-';
 };
-
 const getTeamMembers = (proyek: Record<string, any>): any[] => {
   if (Array.isArray(proyek.teams)) return proyek.teams; 
   if (Array.isArray(proyek.tim)) return proyek.tim;
@@ -56,7 +39,6 @@ const getTeamMembers = (proyek: Record<string, any>): any[] => {
   if (Array.isArray(proyek.teamMembers)) return proyek.teamMembers;
   return [];
 };
-
 const formatDate = (value: unknown): string => {
   try {
     if (!value) return '?';
@@ -69,7 +51,6 @@ const formatDate = (value: unknown): string => {
     return '?';
   }
 };
-
 const calculateDaysLeft = (endDate: unknown): { text: string; isLate: boolean } => {
   try {
     if (!endDate) return { text: 'Belum diset', isLate: false };
@@ -79,9 +60,7 @@ const calculateDaysLeft = (endDate: unknown): { text: string; isLate: boolean } 
     if (isNaN(end.getTime())) return { text: 'Belum diset', isLate: false };
     const today = new Date();
     const diffDays = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) {
-      return { text: `${Math.abs(diffDays)} hari terlambat`, isLate: true };
-    }
+    if (diffDays < 0) return { text: `${Math.abs(diffDays)} hari terlambat`, isLate: true };
     return { text: `${diffDays} hari tersisa`, isLate: false };
   } catch {
     return { text: 'Belum diset', isLate: false };
@@ -89,48 +68,74 @@ const calculateDaysLeft = (endDate: unknown): { text: string; isLate: boolean } 
 };
 
 
-
-export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek }) => {
+export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek, onEdit, onDelete }) => {
   // Derived values
   const clientName = getClientName(proyek);
   const teamMembers = getTeamMembers(proyek);
-  //debug
-  console.log("ISI DATA PROYEK:", proyek);
   const status = safeString(proyek.status);
   const statusColor = getStatusColor(proyek.status);
   const displayName = safeString(proyek.nama || proyek.name || 'Project Name');
   const description = safeString(proyek.deskripsi || proyek.description || 'Pengembangan proyek sesuai dengan kesepakatan...');
   const displayCode = safeString(proyek.kode || proyek.code || (typeof proyek.id === 'string' ? proyek.id.substring(0, 4) : ''));
   
-  // 2. FIX PROGRESS: Hitung rata-rata kalau ada relasi activities dari backend
   let progress = Number(proyek.progress || proyek.progressPercentage || 0);
-  
-  // Fallback: Kalau dari backend ada array aktivitas, kita hitung rata-ratanya
   const arrAktivitas = (proyek.activities || proyek.aktivitas) as any[];
   if (progress === 0 && Array.isArray(arrAktivitas) && arrAktivitas.length > 0) {
     const totalProg = arrAktivitas.reduce((sum, act) => sum + (Number(act.progress) || 0), 0);
     progress = Math.round(totalProg / arrAktivitas.length);
   }
 
-  // 3. FIX BUDGET: Pastikan baca budget dari backend
+  // --- 3. Budget ---
   const budget = Number(proyek.budget || proyek.budgetTotal || 0);
-  const budgetTerpakai = Number(proyek.budgetTerpakai || proyek.budgetUsed || proyek.budgetSpent || 0);
+  
+  const listAktivitas = (proyek.activities || proyek.aktivitas || []) as any[];
+
+  const budgetTerpakai = listAktivitas.reduce((total, act) => {
+    const bobot = Number(act.weight || 0) / 100;
+    const budgetPerAktivitas = budget * bobot;
+    const progresAktivitas = Number(act.progress || 0) / 100;
+    
+    return total + (budgetPerAktivitas * progresAktivitas);
+  }, 0);
+
   const budgetPercentage = budget > 0 ? Math.round((budgetTerpakai / budget) * 100) : 0;
   
   const startDate = formatDate(proyek.tanggalMulai || proyek.startDate);
   const endDate = formatDate(proyek.tanggalSelesai || proyek.endDate);
   const daysLeft = calculateDaysLeft(proyek.tanggalSelesai || proyek.endDate);
-  
+
+  const handleActionClick = (e: React.MouseEvent, action: () => void) => {
+    e.preventDefault();  
+    e.stopPropagation(); 
+    action();
+  };
 
   return (
     <Link href={`/proyek/${proyek.id}`} className="block group">
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 relative">
         
-        <div className="absolute right-6 top-6 opacity-0 group-hover:opacity-100 transition-opacity translate-x-2 group-hover:translate-x-0">
-          <ChevronRight className="w-5 h-5 text-blue-500" />
+        <div className="absolute right-4 top-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button 
+              onClick={(e) => handleActionClick(e, () => onEdit(proyek))}
+              className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+              title="Edit Proyek"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button 
+              onClick={(e) => handleActionClick(e, () => onDelete(proyek.id as string, displayName))}
+              className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+              title="Hapus Proyek"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        <div className="flex gap-5">
+        <div className="flex gap-5 mt-2">
           <div className="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
             <FolderGit2 className="w-6 h-6" />
           </div>
@@ -145,13 +150,14 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek }) => {
               </span>
             </div>
             
-            <h3 className="text-lg font-bold text-blue-600 dark:text-blue-400 group-hover:underline decoration-2 underline-offset-2">
+            <h3 className="text-lg font-bold text-blue-600 dark:text-blue-400 group-hover:underline decoration-2 underline-offset-2 pr-12">
               {displayName}
             </h3>
             <p className="text-sm text-slate-500 mt-1 line-clamp-1">
               {description}
             </p>
 
+            {/* Grid 4 Kolom */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
               <div>
                 <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">🏢 Client</p>
@@ -167,13 +173,11 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek }) => {
                 <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">👥 Tim</p>
                 <div className="flex -space-x-2 mt-1">
                   {teamMembers.slice(0, 3).map((t: any, i: number) => {
-                    // Berdasarkan JSON-mu, namanya ada di t.user.name
                     const namaAnggota = t.user?.name || t.name || t.nama || 'U';
-
                     return (
                       <div 
                         key={i} 
-                        title={namaAnggota} // Menampilkan nama saat di-hover
+                        title={namaAnggota}
                         className="w-6 h-6 rounded-full bg-blue-500 border-2 border-white dark:border-slate-900 text-[9px] font-bold text-white flex items-center justify-center uppercase"
                       >
                         {namaAnggota.charAt(0)}
@@ -198,6 +202,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek }) => {
 
             <div className="h-px bg-slate-100 dark:bg-slate-800 my-4 w-full"></div>
 
+            {/* Progress & Budget */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
                 <div className="flex justify-between text-xs font-medium mb-1">
