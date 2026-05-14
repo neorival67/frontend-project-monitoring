@@ -36,9 +36,8 @@ export const TabApproval: React.FC<TabApprovalProps> = ({ activities, currentUse
   //const canSubmit = ['vendor', 'tim', 'pm', 'project manager', 'admin','ADMIN','VENDOR','PM','TIM'].includes(role);
   
   // 2. Yang bisa Review/Approve: Client, Admin
- // const canReview = ['client', 'admin','CLIENT','ADMIN'].includes(role);
-    const canSubmit = true;
-    const canReview = true;
+  const canReview = ['CLIENT', 'ADMIN'].includes(role);
+  const canSubmit = true;
 
   const fetchDeliverables = async () => {
     if (!proyekId) return;

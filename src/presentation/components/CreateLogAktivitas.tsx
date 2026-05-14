@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import apiClient from "@/infrastructure/api/apiClient";
 import { Aktivitas } from '@/core/entities/Proyek'; 
 
@@ -11,14 +11,23 @@ interface CreateLogAktivitasProps {
 
 export const CreateLogAktivitas: React.FC<CreateLogAktivitasProps> = ({ isOpen, onClose, activities, onSuccess }) => {
   const [aktivitasId, setAktivitasId] = useState('');
+  const [userId, setUserId] = useState('');
   const [tipeLog, setTipeLog] = useState('Update Progress'); 
   const [progress, setProgress] = useState('');
   const [biaya, setBiaya] = useState('');
   const [deskripsi, setDeskripsi] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [tanggal, setTanggal] = useState('');
-  
-  if (!isOpen) return null;
+
+  useEffect(() => {
+    if (isOpen) {
+      const userData = localStorage.getItem('user'); 
+      if (userData) {
+        const user = JSON.parse(userData);
+        setUserId(user.id);
+      }
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +37,7 @@ export const CreateLogAktivitas: React.FC<CreateLogAktivitasProps> = ({ isOpen, 
       
       const payload = {
         aktivitasId: aktivitasId,
-        userId: "44dfdd0e-8ab8-406d-9406-9653950aeb92", 
+        userId: userId, 
         description: deskripsi,
         progressAdded: tipeLog === 'Update Progress' && progress ? Number(progress) : 0,
         costIncurred: tipeLog === 'Realisasi Biaya' && biaya ? Number(biaya) : 0,
@@ -55,7 +64,11 @@ export const CreateLogAktivitas: React.FC<CreateLogAktivitasProps> = ({ isOpen, 
     } finally {
       setIsLoading(false);
     }
+
+    
   };
+
+   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">

@@ -10,6 +10,7 @@ import { TabOverview } from './tabs/TabOverview';
 import { TabPlanningGantt } from './tabs/TabPlanningGantt';
 import { TabMonitoring } from './tabs/TabMonitoring';
 import { TabApproval } from './tabs/TabApproval';
+import { TabTeamProject } from './tabs/TabTeamProject';
 import { userAgent } from 'next/server';
 import TabClosingProyek from './tabs/TabClosingProyek'; 
 import { Client } from '@/core/entities/Client';
@@ -24,6 +25,18 @@ export const ProjectDetailFeature = () => {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+  // Ambil role pengguna dari localStorage untuk keperluan otorisasi UI
+  let currentUserRole = "STAFF";
+  try {
+    const usr = localStorage.getItem("user");
+    if (usr) {
+       const parsed = JSON.parse(usr);
+       currentUserRole = parsed.role?.toUpperCase();
+    }
+  } catch(e) {}
+
+  const canChangeStatus = ["ADMIN", "PM", "CLIENT"].includes(currentUserRole);
 
   // TARIK DATA API
   const { data: response, isLoading } = useProyekDetail(projectId);
@@ -73,7 +86,7 @@ export const ProjectDetailFeature = () => {
   const team = proyek.tim || proyek.teamMember || proyek.users || [];
   const risks = proyek.risks || proyek.risiko || []; 
   const deliverables = proyek.deliverables || proyek.dokumen || [];
-  const clientName = proyek.client?.name || proyek.Client.name;
+  const clientName = proyek.client?.name || proyek.Client?.name || "-";
   const LogAktivitas = proyek.LogAktivitas || proyek.logAktivitas || [];
   const Approval = proyek.ReviewApproval || [];
 
@@ -102,40 +115,46 @@ export const ProjectDetailFeature = () => {
           </div>
 
           {/* KANAN: Dropdown Status dengan Latar Putih Bersih */}
-          <div className="shrink-0 min-w-[160px]"> {/* Biar lebarnya pas & gak gepeng */}
-            <div className="relative">
-              <select
-                value={proyek.status?.toUpperCase() || "PERENCANAAN"}
-                onChange={handleStatusChange}
-                disabled={isUpdatingStatus}
-                className="appearance-none w-full bg-white border border-slate-200 text-slate-700 py-2 px-4 pr-10 rounded-xl text-sm font-semibold shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
-              >
-                <option value="INISIASI">Inisiasi</option>
-                <option value="PERENCANAAN">Planning</option>
-                <option value="PELAKSANAAN">Pelaksanaan</option>
-                <option value="MONITORING">Monitoring</option>
-                <option value="CLOSING">Closing</option>
-              </select>
-              
-              {/* Ikon panah kecil biar lebih cantik (Opsional) */}
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
-                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
+          {canChangeStatus && (
+            <div className="shrink-0 min-w-[160px]"> {/* Biar lebarnya pas & gak gepeng */}
+              <div className="relative">
+                <select
+                  value={proyek.status?.toUpperCase() || "PERENCANAAN"}
+                  onChange={handleStatusChange}
+                  disabled={isUpdatingStatus}
+                  className="appearance-none w-full bg-white border border-slate-200 text-slate-700 py-2 px-4 pr-10 rounded-xl text-sm font-semibold shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <option value="INISIASI">Inisiasi</option>
+                  <option value="PERENCANAAN">Planning</option>
+                  <option value="PELAKSANAAN">Pelaksanaan</option>
+                  <option value="MONITORING">Monitoring</option>
+                  <option value="CLOSING">Closing</option>
+                </select>
+                
+                {/* Ikon panah kecil biar lebih cantik (Opsional) */}
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                    <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* TABS NAVIGATION */}
         <div className="flex items-center gap-8 mt-6 px-6 border-b border-slate-100 overflow-x-auto">
           {[
             { id: 'overview', label: 'Overview', icon: <Activity className="w-4 h-4" /> },
-            { id: 'planning', label: 'Planning & Gantt', icon: <Calendar className="w-4 h-4" /> },
+            { id: 'planning', label: 'Planning & Gantt', icon: <Calendar className="w-4 h-4" />, roleAllowed: ["ADMIN", "PM", "CLIENT"] },
             { id: 'monitoring', label: 'Monitoring', icon: <Clock className="w-4 h-4" /> },
             { id: 'approval', label: 'Approval', icon: <CheckCircle2 className="w-4 h-4" /> },
-            { id: 'closing', label: 'Closing', icon: <FileText className="w-4 h-4" /> },
-          ].map((tab) => (
+            { id: 'team', label: 'Tim Proyek', icon: <User className="w-4 h-4" />, roleAllowed: ["ADMIN", "PM"] },
+            { id: 'closing', label: 'Closing', icon: <FileText className="w-4 h-4" />, roleAllowed: ["ADMIN", "PM", "CLIENT"] },
+          ].filter(tab => {
+             if (!tab.roleAllowed) return true;
+             return tab.roleAllowed.includes(currentUserRole);
+          }).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -181,6 +200,13 @@ export const ProjectDetailFeature = () => {
           <TabApproval 
             activities={activities} 
             currentUser={User} 
+          />
+        )}
+
+        {activeTab === 'team' && (
+          <TabTeamProject 
+            proyekId={projectId}
+            team={team}
           />
         )}
 

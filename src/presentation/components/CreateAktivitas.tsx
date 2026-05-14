@@ -123,10 +123,14 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
               <div>
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Kategori</label>
                 <select name="category" value={formData.category} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white">
-                  <option value="Development">Development</option>
                   <option value="Analisis">Analisis</option>
                   <option value="Desain">Desain</option>
+                  <option value="Development">Development</option>
                   <option value="Testing">Testing</option>
+                  <option value="Deployment">Deployment</option>
+                  <option value="Training">Training</option>
+                  <option value="Dokumentasi">Dokumentasi</option>
+                  <option value="Lainnya">Lainnya</option>
                 </select>
               </div>
             </div>

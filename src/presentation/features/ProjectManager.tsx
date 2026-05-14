@@ -38,8 +38,62 @@ export function ProjectManager() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("Semua");
 
-  // Handle response data
-  const safeProjects: Record<string, unknown>[] = (Array.isArray(response) ? response : []) as unknown as Record<string, unknown>[];
+  // Handle response data format from backend
+  const responseData = (response as any)?.data || response;
+  const rawProjects: Record<string, unknown>[] = (Array.isArray(responseData) ? responseData : []) as unknown as Record<string, unknown>[];
+  
+  // Filter berdasarkan role: ADMIN/PM lihat semua, TIM/VENDOR lihat yang diassign saja
+  let currentUser: any = null;
+  try {
+    const usr = localStorage.getItem("user");
+    if (usr) currentUser = JSON.parse(usr);
+  } catch(e) {}
+
+  const safeProjects = rawProjects.filter(p => {
+    if (!currentUser) return false;
+    if (currentUser.role === "ADMIN" || currentUser.role === "PM") return true;
+    
+    // 1. Jika role adalah CLIENT
+    if (currentUser.role === "CLIENT" || currentUser.role === "Client") {
+      const pClientObj = p.client || p.klien;
+      const pClientId = p.clientId || p.klienId || (pClientObj as any)?.id;
+      
+      if (pClientId && pClientId === currentUser.companyId) return true;
+      
+      if (pClientObj) {
+        const clientEmail = (pClientObj as any).email?.toLowerCase();
+        const userEmail = currentUser.email?.toLowerCase();
+        if (clientEmail && userEmail && clientEmail === userEmail) return true;
+        
+        const clientPic = ((pClientObj as any).pic || (pClientObj as any).kontak || (pClientObj as any).namaPIC || (pClientObj as any).contactPerson)?.toLowerCase();
+        const userName = currentUser.name?.toLowerCase();
+        if (clientPic && userName && clientPic === userName) return true;
+      }
+    }
+
+    // 2. Jika role adalah VENDOR
+    if (currentUser.role === "VENDOR" || currentUser.role === "Vendor") {
+      const vendorList: any[] = Array.isArray(p.vendors) ? p.vendors : [];
+      if (vendorList.some(v => 
+        v.id === currentUser.companyId || 
+        v.email === currentUser.email || 
+        v.kontak === currentUser.name || 
+        v.pic === currentUser.name
+      )) return true;
+    }
+
+    // 3. Untuk TIM/VENDOR/STAFF, cek apakah mereka di-assign di dalam tim proyek
+    const teamMembers: any[] = Array.isArray(p.teams) ? p.teams : 
+                               Array.isArray(p.tim) ? p.tim : 
+                               Array.isArray(p.team) ? p.team : 
+                               Array.isArray(p.teamMembers) ? p.teamMembers : [];
+    
+    return teamMembers.some(member => 
+      (member.userId === currentUser.id) || 
+      (member.user?.id === currentUser.id) ||
+      (member.id === currentUser.id)
+    );
+  });
 
   // Derived counts
   const countAll = safeProjects.length;
@@ -85,15 +139,34 @@ export function ProjectManager() {
           <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Daftar Proyek</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{countAll} proyek terdaftar di sistem</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-          Buat Proyek Baru
-        </button>
+        {/* Tombol Buat Proyek Baru hanya untuk ADMIN atau PM */}
+        {(() => {
+          let isAllowed = false;
+          try {
+            const usr = localStorage.getItem("user");
+            if (usr) {
+              const parsed = JSON.parse(usr);
+              if (parsed.role === "ADMIN" || parsed.role === "PM") {
+                isAllowed = true;
+              }
+            }
+          } catch(e) {}
+
+          if (isAllowed) {
+            return (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 shadow-sm whitespace-nowrap"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Buat Proyek Baru
+              </button>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {/* Filters & Search */}

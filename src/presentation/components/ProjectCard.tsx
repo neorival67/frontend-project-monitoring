@@ -115,24 +115,43 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ proyek, onEdit, onDele
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-700 relative">
         
         <div className="absolute right-4 top-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          {onEdit && (
-            <button 
-              onClick={(e) => handleActionClick(e, () => onEdit(proyek))}
-              className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-              title="Edit Proyek"
-            >
-              <Edit2 className="w-4 h-4" />
-            </button>
-          )}
-          {onDelete && (
-            <button 
-              onClick={(e) => handleActionClick(e, () => onDelete(proyek.id as string, displayName))}
-              className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
-              title="Hapus Proyek"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          )}
+          {(() => {
+            let isAllowed = false;
+            try {
+              const usr = localStorage.getItem("user");
+              if (usr) {
+                const parsed = JSON.parse(usr);
+                if (parsed.role === "ADMIN" || parsed.role === "PM") {
+                  isAllowed = true;
+                }
+              }
+            } catch(e) {}
+
+            if (!isAllowed) return null;
+
+            return (
+              <>
+                {onEdit && (
+                  <button 
+                    onClick={(e) => handleActionClick(e, () => onEdit(proyek))}
+                    className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Edit Proyek"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                )}
+                {onDelete && (
+                  <button 
+                    onClick={(e) => handleActionClick(e, () => onDelete(proyek.id as string, displayName))}
+                    className="p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                    title="Hapus Proyek"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         <div className="flex gap-5 mt-2">
