@@ -6,15 +6,36 @@ import type { User, CreateUserPayload, UpdateUserPayload } from "@/core/entities
  * Implementasi pemanggilan API untuk manajemen pengguna
  */
 
+/**
+ * Normalisasi field dari API:
+ * - Backend mungkin mengembalikan `department` (English) → map ke `departemen`
+ * - Handles nested `data` wrapper
+ */
+function normalizeUser(raw: any): User {
+  return {
+    ...raw,
+    // Normalize: department (English) → departemen (Indonesian)
+    departemen: raw.departemen ?? raw.department ?? undefined,
+    // Normalize: phone variations
+    phone: raw.phone ?? raw.phoneNumber ?? raw.phone_number ?? undefined,
+  } as User;
+}
+
+function normalizeUsers(raws: any[]): User[] {
+  return raws.map(normalizeUser);
+}
+
 export async function getSemuaUser(): Promise<User[]> {
-  const { data } = await apiClient.get<{ success: boolean; data?: User[] }>("/users/get-all");
-  // API returns an array directly based on the spec, but let's handle if it's wrapped
-  return Array.isArray(data) ? data : (data?.data || []);
+  const { data } = await apiClient.get<any>("/users/get-all");
+  const arr = Array.isArray(data) ? data : (data?.data || []);
+  return normalizeUsers(arr);
 }
 
 export async function getUserById(id: string): Promise<User> {
-  const { data } = await apiClient.get<User>(`/users/getby/${id}`);
-  return data;
+  const { data } = await apiClient.get<any>(`/users/getby/${id}`);
+  // unwrap jika terbungkus { data: User }
+  const raw = data?.data ?? data;
+  return normalizeUser(raw);
 }
 
 export async function createUser(payload: CreateUserPayload): Promise<User> {

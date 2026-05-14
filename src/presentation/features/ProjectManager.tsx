@@ -58,7 +58,6 @@ export function ProjectManager() {
     
     if (confirmDelete) {
       try {
-        // 🔥 INI DIA! Langsung panggil fungsi deleteProyek dari repo lu
         await deleteProyek(id); 
         
         alert("✅ Proyek berhasil dihapus permanen!");

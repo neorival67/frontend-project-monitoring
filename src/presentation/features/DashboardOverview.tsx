@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { 
   useDashboardStats, useActiveProjects, 
-  useDashboardCharts, usePredictions, useDashboardActivities 
+  useDashboardCharts, usePredictions, useDashboardActivities, useVendorPerformance
 } from '@/use-cases/hooks/useDashboard';
 
 export const DashboardOverview = () => {
@@ -17,6 +17,8 @@ export const DashboardOverview = () => {
   const { data: chartDataAPI, isLoading: loadingCharts } = useDashboardCharts();
   const { data: predictionsAPI, isLoading: loadingPredictions } = usePredictions();
   const { data: activitiesAPI, isLoading: loadingActivities } = useDashboardActivities();
+  const { data: vendorData, isLoading: loadingVendor } = useVendorPerformance();
+
 
   const stats = statsAPI?.overview || {};
   const keuangan = statsAPI?.keuangan || {};
@@ -25,8 +27,9 @@ export const DashboardOverview = () => {
   const chartDataTarget = chartDataAPI?.targetVsAktual || [];
   const evmPredictions = Array.isArray(predictionsAPI) ? predictionsAPI : [];
   
-  const recentActivities = activitiesAPI?.recentActivities || [];
-  const riskDistribution = activitiesAPI?.riskDistribution || [];
+  const recentActivities = statsAPI?.aktivitasTerkini || []; 
+  const riskDistribution = statsAPI?.distribusiRisiko || [];
+  const vendorPerformance = vendorData?.vendorPerformance || [];
 
   // Kalkulasi total risiko untuk Donut Chart
   const totalRisks = riskDistribution.reduce((sum: number, r: any) => sum + (r.count || 0), 0);
@@ -66,7 +69,7 @@ export const DashboardOverview = () => {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] relative overflow-hidden">
           <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center mb-4"><AlertTriangle className="w-5 h-5"/></div>
           <ArrowUpRight className="absolute top-5 right-5 w-4 h-4 text-slate-300" />
-          <h2 className="text-3xl font-bold text-slate-800">{loadingActivities ? "..." : totalRisks}</h2>
+        <h2 className="text-3xl font-bold text-slate-800">{loadingStats || loadingActivities ? "..." : ((stats.risiko ?? 0) || totalRisks)}</h2>
           <p className="text-sm text-slate-500 font-medium mt-1">Total Risiko</p>
         </div>
         
@@ -218,20 +221,41 @@ export const DashboardOverview = () => {
           </div>
         </div>
 
-        {/* Analisis Performa Vendor - KOSONG KARENA BELUM ADA API */}
+        {/* Analisis Performa Vendor - Dari Risk Distribution */}
         <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center"><Zap className="w-4 h-4 text-purple-500" /></div>
             <div>
               <h3 className="font-semibold text-slate-800 text-sm">Analisis Vendor</h3>
-              <p className="text-[11px] text-slate-400 font-medium">Multi-metric Scoring</p>
+              <p className="text-[11px] text-slate-400 font-medium">Ringkasan Risiko per Level</p>
             </div>
           </div>
           
-          <div className="h-full flex items-center justify-center pb-10">
-             <div className="text-slate-400 text-sm text-center border border-dashed border-slate-200 p-4 rounded-xl">
-               Belum ada data metrik evaluasi vendor dari API saat ini.
-             </div>
+          <div className="space-y-6">
+            {loadingVendor ? (
+                <p className="text-xs text-slate-400 text-center py-10">Menghitung performa...</p>
+            ) : vendorData?.length > 0 ? (
+              vendorData.map((vendor: any, idx: number) => (
+                <div key={idx} className="bg-slate-50/50 border border-slate-100 p-4 rounded-xl">
+                    <div className="flex justify-between items-start mb-3">
+                        <div>
+                            <h4 className="text-sm font-bold text-slate-700">{vendor.vendorName}</h4>
+                            <p className="text-[10px] text-slate-400">{vendor.projectCount} proyek aktif</p>
+                        </div>
+                        <span className="text-lg font-bold text-emerald-500">{vendor.overallScore}</span>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                            <div className="bg-blue-500 h-full" style={{ width: `${vendor.metrics.progress}%` }}></div>
+                        </div>
+                    </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-slate-400 text-xs text-center py-10 border border-dashed rounded-xl">
+                Belum ada data performa vendor.
+              </div>
+            )}
           </div>
         </div>
 
@@ -306,25 +330,42 @@ export const DashboardOverview = () => {
         {/* Aktivitas Terkini - DARI API */}
         <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl p-6 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
           <h3 className="font-semibold text-slate-800 text-sm mb-6">Aktivitas Terkini</h3>
-          <div className="space-y-5">
-            {loadingActivities ? (
-              <div className="text-sm text-slate-400">Menarik log aktivitas...</div>
-            ) : recentActivities.length > 0 ? (
+          <div className="space-y-6">
+            {recentActivities.length > 0 ? (
               recentActivities.map((act: any) => (
-                <div key={act.id} className="flex gap-4 items-center group">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${act.progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
-                  <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-slate-700">{act.nama}</h4>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      {act.proyek?.kode || 'Tanpa Proyek'} • Progress {act.progress}% • {act.status}
-                    </p>
+                <div key={act.id} className="flex justify-between items-center group">
+                  <div className="flex gap-4 items-start">
+                    {/* Dot Hijau (Indikator Status) */}
+                    <div className="mt-1.5 w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></div>
+                    
+                    <div>
+                      {/* Nama Aktivitas (Contoh: Analisis & Desain Sistem) */}
+                      <h4 className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">
+                        {act.namaAktivitas}
+                      </h4>
+                      
+                      {/* Nama Proyek & Progress (Contoh: Proyek Pertamina • Progress 100%) */}
+                      <p className="text-[11px] text-slate-400 mt-0.5 font-medium">
+                        <span className="uppercase">{act.namaProyek}</span> • Progress {act.progress}%
+                      </p>
+                    </div>
                   </div>
-                  {/* Garis status di kanan */}
-                  <div className={`w-8 h-1.5 rounded-full opacity-80 group-hover:opacity-100 transition-opacity ${act.progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
+
+                  {/* Progress Bar Mini di Sisi Kanan (Sesuai gambar image_2bc17e.png) */}
+                  <div className="flex flex-col items-end">
+                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="bg-emerald-500 h-full rounded-full transition-all duration-1000" 
+                        style={{ width: `${act.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
                 </div>
               ))
             ) : (
-              <div className="text-sm text-slate-400 py-4">Belum ada aktivitas terekam.</div>
+              <div className="text-sm text-slate-400 py-10 italic text-center border border-dashed rounded-xl">
+                Belum ada aktivitas terekam.
+              </div>
             )}
           </div>
         </div>

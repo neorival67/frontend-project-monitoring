@@ -50,13 +50,16 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) =>
       authRepo.login(credentials),
-    onSuccess: (data:any) => {
-      localStorage.setItem("accessToken", data.access_token);
+    onSuccess: (data: any) => {
+      // Handle both camelCase (accessToken) and snake_case (access_token) from API
+      const token = data.accessToken ?? data.access_token ?? "";
+      localStorage.setItem("accessToken", token);
       localStorage.setItem("user", JSON.stringify(data.user));
       queryClient.setQueryData(AUTH_QUERY_KEY, data.user);
       router.push("/proyek");
     },
   });
+
 
   // ── Logout (client-side only — no endpoint) ──────────────────────
   const logout = useCallback(() => {

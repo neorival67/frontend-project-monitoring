@@ -127,13 +127,6 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
-
-      <div className="sidebar-footer">
-        <Link href="/settings" className="sidebar-link">
-          <span className="sidebar-icon">⚙️</span>
-          <span>Settings</span>
-        </Link>
-      </div>
     </aside>
   );
 }

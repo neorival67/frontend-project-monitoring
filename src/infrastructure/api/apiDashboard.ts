@@ -6,4 +6,5 @@ export const apiDashboard = {
   getCharts: () => apiClient.get<any>("/dashboard/charts"),
   getPredictions: () => apiClient.get<any>("/dashboard/predictions"),
   getActivities: () => apiClient.get<any>("/dashboard/activities"),
+  getVendorPerformance: () => apiClient.get<any>("/dashboard/vendor-performance"),
 };

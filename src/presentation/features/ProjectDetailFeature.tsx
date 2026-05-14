@@ -15,6 +15,7 @@ import TabClosingProyek from './tabs/TabClosingProyek';
 import { Client } from '@/core/entities/Client';
 import { ClientVendor, ClosingProyek } from '../../core/entities/Proyek';
 import { active } from 'd3';
+import { updateProyek } from '@/infrastructure/repositories/proyek.repo';
 
 export const ProjectDetailFeature = () => {
   const params = useParams();
@@ -22,6 +23,7 @@ export const ProjectDetailFeature = () => {
   const projectId = params?.id as string; 
 
   const [activeTab, setActiveTab] = useState('overview');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   // TARIK DATA API
   const { data: response, isLoading } = useProyekDetail(projectId);
@@ -47,7 +49,26 @@ export const ProjectDetailFeature = () => {
     );
   }
 
-  // Data Preparation (Bisa juga dipindah ke custom hooks terpisah jika makin besar)
+  const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value;
+    const confirmUpdate = window.confirm(`Yakin ingin mengubah status proyek menjadi ${newStatus}?`);
+    
+    if (!confirmUpdate) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      await updateProyek(projectId, { status: newStatus });
+      alert("✅ Status proyek berhasil diperbarui!");
+      window.location.reload(); // Refresh halaman biar data status & badge ikut berubah
+    } catch (error: any) {
+      const pesanBackend = error.response?.data?.message || error.response?.data?.error || error.message;
+      alert(`❌ Gagal merubah status proyek:\n${pesanBackend}`);
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  // Data Preparation 
   const activities = proyek.activities || proyek.aktivitas || [];
   const team = proyek.tim || proyek.teamMember || proyek.users || [];
   const risks = proyek.risks || proyek.risiko || []; 
@@ -61,8 +82,10 @@ export const ProjectDetailFeature = () => {
       
       {/* HEADER SECTION TETAP DI SINI */}
       <div className="bg-white border border-slate-100 rounded-t-2xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)]">
-        <div className="p-6 pb-0 flex items-start justify-between">
-          <div className="flex gap-4">
+        <div className="p-6 pb-0 flex items-start justify-between gap-4"> {/* Tambahin justify-between & gap-4 */}
+          
+          {/* KIRI: Info Proyek (Bungkus dalam div & kasih flex-1 biar gak kegeser aneh) */}
+          <div className="flex gap-4 flex-1">
             <button onClick={() => router.back()} className="mt-1 p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -75,6 +98,31 @@ export const ProjectDetailFeature = () => {
               </div>
               <h1 className="text-2xl font-bold text-slate-800">{proyek.nama || proyek.name || 'Nama Proyek'}</h1>
               <p className="text-sm text-slate-500 mt-1">{clientName}</p>
+            </div>
+          </div>
+
+          {/* KANAN: Dropdown Status dengan Latar Putih Bersih */}
+          <div className="shrink-0 min-w-[160px]"> {/* Biar lebarnya pas & gak gepeng */}
+            <div className="relative">
+              <select
+                value={proyek.status?.toUpperCase() || "PERENCANAAN"}
+                onChange={handleStatusChange}
+                disabled={isUpdatingStatus}
+                className="appearance-none w-full bg-white border border-slate-200 text-slate-700 py-2 px-4 pr-10 rounded-xl text-sm font-semibold shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="INISIASI">Inisiasi</option>
+                <option value="PERENCANAAN">Planning</option>
+                <option value="PELAKSANAAN">Pelaksanaan</option>
+                <option value="MONITORING">Monitoring</option>
+                <option value="CLOSING">Closing</option>
+              </select>
+              
+              {/* Ikon panah kecil biar lebih cantik (Opsional) */}
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>

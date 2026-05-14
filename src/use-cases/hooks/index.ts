@@ -13,7 +13,13 @@ export {
   useUpdateClient,
   useDeleteClient,
 } from "./useClient";
-export { useDashboardSummary } from "./useDashboard";
+export {
+  useDashboardStats,
+  useActiveProjects,
+  useDashboardCharts,
+  usePredictions,
+  useDashboardActivities,
+} from "./useDashboard";
 export {
   useSemuaUser,
   useUserDetail,

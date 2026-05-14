@@ -35,7 +35,11 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
           phone: user.phone || "",
           departemen: user.departemen || "Engineering",
           status: user.status || "ACTIVE",
-          skills: user.skills ? user.skills.split(",").map(s => s.trim()).filter(Boolean) : [],
+          skills: Array.isArray(user.skills)
+            ? user.skills
+            : typeof user.skills === "string"
+              ? (user.skills as string).split(",").map((s: string) => s.trim()).filter(Boolean)
+              : [],
         });
       } else if (!isEdit) {
         // Reset form for add mode

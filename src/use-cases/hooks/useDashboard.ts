@@ -45,3 +45,11 @@ export function useDashboardActivities() {
     refetchInterval: REFETCH_INTERVAL,
   });
 }
+
+export function useVendorPerformance() {
+  return useQuery({
+    queryKey: ["dashboard", "vendor-performance"],
+    queryFn: dashboardRepo.getVendorPerformance,
+    refetchInterval: REFETCH_INTERVAL,
+  })
+}

@@ -6,6 +6,8 @@ import AttachmentModal from "@/presentation/components/AttachmentModal";
 import type { Aktivitas } from "@/core/entities/Proyek"; 
 import { ClosingRepository } from "@/infrastructure/repositories/closing.repo";
 import SuccessClosingModal from "@/presentation/components/SuccessClosingModal";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface TabClosingProyekProps {
   proyekId: string;
@@ -79,6 +81,44 @@ export default function TabClosingProyek({
     }
   };
 
+  const generatePDFReport = () => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.setTextColor(41, 128, 185); // Warna Biru
+    doc.text("Laporan Akhir Penutupan Proyek", 14, 22);
+    
+    doc.setFontSize(11);
+    doc.setTextColor(50, 50, 50);
+    doc.text(`ID Proyek: ${proyekId}`, 14, 32);
+    doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}`, 14, 38);
+    
+    doc.setLineWidth(0.5);
+    doc.line(14, 42, 196, 42);
+
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Daftar Aktivitas Terverifikasi", 14, 52);
+
+    const tableData = activities.map((act, index) => [
+      index + 1,
+      act.nama || act.name,
+      act.progress + "%",
+      "Selesai & Terverifikasi"
+    ]);
+
+   autoTable(doc, {
+    startY: 58,
+      head: [['No', 'Nama Aktivitas', 'Progress', 'Status']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 9 },
+   });
+   
+    doc.save(`Laporan_Closing_${proyekId}.pdf`);
+  };
+
   const handleSubmitClosing = async () => {
     if (verifiedCount !== totalActivities) {
       alert("Semua aktivitas harus diverifikasi sebelum menutup proyek!");
@@ -93,7 +133,9 @@ export default function TabClosingProyek({
       });
 
       if (response) {
-        localStorage.removeItem(storageKey); 
+        localStorage.removeItem(storageKey);
+
+        generatePDFReport();
         
         setModalContent({
           title: "Proyek Ditutup!",

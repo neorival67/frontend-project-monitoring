@@ -3,7 +3,8 @@ import { apiDashboard } from "@/infrastructure/api/apiDashboard";
 
 export async function getDashboardStats() {
   const { data: response } = await apiDashboard.getStats();
-  return response?.data || { overview: {}, keuangan: {} };
+  const finalData = response?.data?.overview ? response.data : (response?.data?.data || response?.data);
+  return finalData || { overview: {}, keuangan: {}, aktivitasTerkini: [], distribusiRisiko: [] };
 }
 
 export async function getActiveProjects() {
@@ -25,6 +26,11 @@ export async function getPredictions() {
 }
 
 export async function getActivities() {
-  const { data: response } = await apiDashboard.getActivities;
+  const { data: response } = await apiDashboard.getActivities();
+  return response?.data || [];
+}
+
+export async function getVendorPerformance() {
+  const { data: response } = await apiDashboard.getVendorPerformance();
   return response?.data || [];
 }

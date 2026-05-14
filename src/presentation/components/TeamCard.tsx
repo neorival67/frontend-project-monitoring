@@ -39,9 +39,14 @@ export function TeamCard({ user, onEdit, onDelete }: TeamCardProps) {
     return "";
   };
 
-  const skills = user.skills ? user.skills.split(",").map(s => s.trim()).filter(Boolean) : [];
+  const skills = Array.isArray(user.skills)
+    ? user.skills
+    : typeof user.skills === "string"
+      ? (user.skills as string).split(",").map((s: string) => s.trim()).filter(Boolean)
+      : [];
   const displaySkills = skills.slice(0, 3);
   const remainingSkills = skills.length > 3 ? skills.length - 3 : 0;
+
 
   return (
     <div className="team-card">

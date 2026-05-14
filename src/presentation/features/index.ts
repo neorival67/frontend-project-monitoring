@@ -5,3 +5,4 @@ export { ActivateForm } from "./ActivateForm";
 export { DashboardChart } from "./DashboardChart";
 export { ClientVendorManager } from "./ClientVendorManager";
 export { DashboardOverview } from "./DashboardOverview";
+export { ProfilePage } from "./ProfilePage";
