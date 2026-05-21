@@ -57,7 +57,7 @@ export function TeamManager() {
     <div className="team-manager">
       <div className="tm-header">
         <div>
-          <h1 className="tm-title">Master Tim</h1>
+          <h1 className="tm-title">Master Users</h1>
           <p className="tm-subtitle">Kelola anggota tim proyek</p>
         </div>
         <button className="btn btn-primary btn-add" onClick={handleAdd}>

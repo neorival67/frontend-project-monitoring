@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useSemuaProyek } from "@/use-cases/hooks/useProyek";
 import { ProjectCard } from "@/presentation/components/ProjectCard";
 import { CreateProjectModal } from "@/presentation/components/CreateProjectModal"; 
-import { deleteProyek } from "@/infrastructure/repositories/proyek.repo";
+import { DeleteModalProyek } from "@/presentation/components/DeleteModalProyek";
 
 const getStatusValue = (proyek: Record<string, unknown>): string => {
   const status = proyek.status;
@@ -35,6 +35,9 @@ export function ProjectManager() {
  
   const { data: response, isLoading, isError } = useSemuaProyek();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingProjectId, setDeletingProjectId] = useState<string | null>(null);
+  const [deletingProjectName, setDeletingProjectName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("Semua");
 
@@ -82,7 +85,7 @@ export function ProjectManager() {
       )) return true;
     }
 
-    // 3. Untuk TIM/VENDOR/STAFF, cek apakah mereka di-assign di dalam tim proyek
+    // 3. Untuk TIM/VENDOR, cek apakah mereka di-assign di dalam tim proyek
     const teamMembers: any[] = Array.isArray(p.teams) ? p.teams : 
                                Array.isArray(p.tim) ? p.tim : 
                                Array.isArray(p.team) ? p.team : 
@@ -107,28 +110,16 @@ export function ProjectManager() {
     return true;
   });
   
- const handleDeleteProject = async (id: string, namaProyek: string) => {
-    const confirmDelete = window.confirm(`Yakin mau menghapus proyek "${namaProyek}"?\nSemua aktivitas di dalamnya akan hilang!`);
-    
-    if (confirmDelete) {
-      try {
-        await deleteProyek(id); 
-        
-        alert("✅ Proyek berhasil dihapus permanen!");
-        
-        window.location.reload();
-
-      } catch (error: any) {
-        const Backendmsg = error.response?.data?.message || error.response?.data?.error || error.message;
-        alert(`❌ Gagal menghapus proyek: \n${Backendmsg}`);
-      }
-    }
+ const handleDeleteProject = (id: string, namaProyek: string) => {
+    setDeletingProjectId(id);
+    setDeletingProjectName(namaProyek);
+    setIsDeleteModalOpen(true);
   };
 
-  const handleEditProject = (proyek: Record<string, unknown>) => {
-    console.log("Tombol edit ditekan untuk proyek:", proyek);
-    alert(`Nanti ini ngebuka modal edit untuk proyek: ${proyek.nama || proyek.name}`);
-  };
+  // const handleEditProject = (proyek: Record<string, unknown>) => {
+  //   console.log("Tombol edit ditekan untuk proyek:", proyek);
+  //   alert(`Nanti ini ngebuka modal edit untuk proyek: ${proyek.nama || proyek.name}`);
+  // };
 
   return (
     <div className="w-full pb-10">
@@ -232,7 +223,7 @@ export function ProjectManager() {
                 key={String(proyek.id)} 
                 proyek={proyek} 
                 onDelete={handleDeleteProject}
-                onEdit={handleEditProject} 
+                //onEdit={handleEditProject} 
               />
 
             ))}
@@ -240,6 +231,12 @@ export function ProjectManager() {
         )}
       </div>
         {isModalOpen && <CreateProjectModal onClose={() => setIsModalOpen(false)} />}
+        <DeleteModalProyek 
+          projectId={deletingProjectId}
+          projectName={deletingProjectName}
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+        />
     </div>
   );
 }

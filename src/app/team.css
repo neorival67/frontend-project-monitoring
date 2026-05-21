@@ -411,3 +411,14 @@
   cursor: not-allowed;
 }
 
+
+/* Dark Theme for Select Options */
+.form-select {
+  background-color: var(--auth-input-bg, #1a1d27);
+  color: var(--auth-text, #f1f5f9);
+}
+.form-select option {
+  background-color: #1a1d27;
+  color: #f1f5f9;
+}
+

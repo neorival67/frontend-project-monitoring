@@ -10,6 +10,7 @@ import {
   useDashboardStats, useActiveProjects, 
   useDashboardCharts, usePredictions, useDashboardActivities, useVendorPerformance
 } from '@/use-cases/hooks/useDashboard';
+import { useSemuaProyek } from '@/use-cases/hooks/useProyek';
 
 export const DashboardOverview = () => {
   const { data: statsAPI, isLoading: loadingStats } = useDashboardStats();
@@ -18,21 +19,148 @@ export const DashboardOverview = () => {
   const { data: predictionsAPI, isLoading: loadingPredictions } = usePredictions();
   const { data: activitiesAPI, isLoading: loadingActivities } = useDashboardActivities();
   const { data: vendorData, isLoading: loadingVendor } = useVendorPerformance();
+  const { data: allProjectsAPI } = useSemuaProyek();
 
+  let currentUser: any = null;
+  if (typeof window !== "undefined") {
+    try {
+      const usr = localStorage.getItem("user");
+      if (usr) currentUser = JSON.parse(usr);
+    } catch(e) {}
+  }
+
+  const userRole = currentUser?.role?.toUpperCase() || "";
+  const isVendorOrTim = userRole === "VENDOR" || userRole === "TIM" || userRole === "STAFF";
+
+  if (isVendorOrTim) {
+    return (
+      <div className="w-full flex flex-col items-center justify-center py-20 px-4">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-8 max-w-md text-center shadow-sm">
+          <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Akses Ditolak</h2>
+          <p className="text-sm text-slate-500">
+            Maaf, role {currentUser?.role || 'Anda'} tidak memiliki akses untuk melihat Dashboard Overview.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const isRestricted = userRole !== "ADMIN" && userRole !== "PM";
+  const isClient = userRole === "CLIENT";
+
+  const rawAllProjects = (allProjectsAPI as any)?.data || allProjectsAPI || [];
+  const allProjects = Array.isArray(rawAllProjects) ? rawAllProjects : [];
+
+  const safeProjects = allProjects.filter((p: any) => {
+    if (!currentUser) return false;
+    if (currentUser.role === "ADMIN" || currentUser.role === "PM") return true;
+    
+    if (isClient) {
+      const pClientObj = p.client || p.klien;
+      const pClientId = p.clientId || p.klienId || (pClientObj as any)?.id;
+      
+      if (pClientId && pClientId === currentUser.companyId) return true;
+      
+      if (pClientObj) {
+        const clientEmail = (pClientObj as any).email?.toLowerCase();
+        const userEmail = currentUser.email?.toLowerCase();
+        if (clientEmail && userEmail && clientEmail === userEmail) return true;
+        
+        const clientPic = ((pClientObj as any).pic || (pClientObj as any).kontak || (pClientObj as any).namaPIC || (pClientObj as any).contactPerson)?.toLowerCase();
+        const userName = currentUser.name?.toLowerCase();
+        if (clientPic && userName && clientPic === userName) return true;
+      }
+      return false;
+    }
+
+    if (currentUser.role?.toUpperCase() === "VENDOR") {
+      const vendorList = Array.isArray(p.vendors) ? p.vendors : [];
+      if (vendorList.some((v: any) => 
+        v.id === currentUser.companyId || 
+        v.email === currentUser.email || 
+        v.kontak === currentUser.name || 
+        v.pic === currentUser.name
+      )) return true;
+      return false;
+    }
+
+    const teamMembers = Array.isArray(p.teams) ? p.teams : 
+                        Array.isArray(p.tim) ? p.tim : 
+                        Array.isArray(p.team) ? p.team : 
+                        Array.isArray(p.teamMembers) ? p.teamMembers : [];
+    
+    return teamMembers.some((member: any) => 
+      (member.userId === currentUser.id) || 
+      (member.user?.id === currentUser.id) ||
+      (member.id === currentUser.id)
+    );
+  });
+
+  const allowedProjectIds = safeProjects.map((p: any) => p.id);
+  const allowedProjectNames = safeProjects.map((p: any) => (p.nama || p.name || '').toLowerCase());
+  const allowedVendors = new Set<string>();
+  safeProjects.forEach((p: any) => {
+    const vList = p.vendors || p.vendor || [];
+    if (Array.isArray(vList)) {
+      vList.forEach((v: any) => {
+        if (v.nama) allowedVendors.add(v.nama.toLowerCase());
+        if (v.name) allowedVendors.add(v.name.toLowerCase());
+      });
+    }
+  });
 
   const stats = statsAPI?.overview || {};
   const keuangan = statsAPI?.keuangan || {};
-  const activeProjects = Array.isArray(activeProjectsAPI) ? activeProjectsAPI : [];
-  const chartDataBudget = chartDataAPI?.komparasiKeuangan || [];
-  const chartDataTarget = chartDataAPI?.targetVsAktual || [];
-  const evmPredictions = Array.isArray(predictionsAPI) ? predictionsAPI : [];
+
+  const rawActiveProjects = Array.isArray(activeProjectsAPI) ? activeProjectsAPI : [];
+  const activeProjects = isRestricted 
+    ? rawActiveProjects.filter((p: any) => allowedProjectIds.includes(p.id) || allowedProjectNames.includes((p.nama || p.name || '').toLowerCase()))
+    : rawActiveProjects;
+
+  const rawChartBudget = chartDataAPI?.komparasiKeuangan || [];
+  const chartDataBudget = isRestricted
+    ? rawChartBudget.filter((d: any) => allowedProjectNames.includes((d.label || '').toLowerCase()) || allowedProjectIds.includes(d.label))
+    : rawChartBudget;
+
+  const rawChartTarget = chartDataAPI?.targetVsAktual || [];
+  const chartDataTarget = isRestricted
+    ? rawChartTarget.filter((d: any) => allowedProjectNames.includes((d.label || '').toLowerCase()) || allowedProjectIds.includes(d.label))
+    : rawChartTarget;
+
+  const rawEvm = Array.isArray(predictionsAPI) ? predictionsAPI : [];
+  const evmPredictions = isRestricted
+    ? rawEvm.filter((p: any) => allowedProjectIds.includes(p.proyekId) || allowedProjectNames.includes((p.proyek || '').toLowerCase()))
+    : rawEvm;
   
-  const recentActivities = statsAPI?.aktivitasTerkini || []; 
-  const riskDistribution = statsAPI?.distribusiRisiko || [];
-  const vendorPerformance = vendorData?.vendorPerformance || [];
+  const rawActivitiesFromEndpoint = Array.isArray(activitiesAPI) ? activitiesAPI : [];
+  const rawActivitiesFromStats = statsAPI?.aktivitasTerkini || [];
+  const rawActivities = rawActivitiesFromEndpoint.length > 0 ? rawActivitiesFromEndpoint : rawActivitiesFromStats; 
+  const recentActivities = isRestricted
+    ? rawActivities.filter((a: any) => allowedProjectIds.includes(a.proyekId) || allowedProjectNames.includes((a.namaProyek || '').toLowerCase()))
+    : rawActivities;
+
+  const rawRiskDist = statsAPI?.distribusiRisiko || [];
+  const riskDistribution = isRestricted 
+    ? rawRiskDist.filter((r: any) => r.proyekId ? allowedProjectIds.includes(r.proyekId) : false) 
+    : rawRiskDist;
+
+  const rawVendorPerf = Array.isArray(vendorData) ? vendorData : (vendorData?.vendorPerformance || vendorData?.data || []);
+  const vendorPerformance = isRestricted
+    ? rawVendorPerf.filter((v: any) => allowedVendors.has((v.vendorName || '').toLowerCase()))
+    : rawVendorPerf;
+
+  // Manual calculation for stats
+  const displayTotalProyek = isRestricted ? safeProjects.length : (stats.proyek || 0);
+  const displayTotalBudget = isRestricted ? safeProjects.reduce((acc: number, p: any) => acc + (Number(p.budget) || 0), 0) : (keuangan.totalBudget || 0);
+  const displayTotalDokumen = isRestricted ? safeProjects.reduce((acc: number, p: any) => acc + ((p.deliverables || p.dokumen || []).length || 0), 0) : (stats.dokumen || 0);
 
   // Kalkulasi total risiko untuk Donut Chart
   const totalRisks = riskDistribution.reduce((sum: number, r: any) => sum + (r.count || 0), 0);
+  const displayTotalRisks = isRestricted ? totalRisks : ((stats.risiko ?? 0) || totalRisks);
+  
   let currentSvgAngle = 0; // Untuk rotasi dinamis Donut Chart
 
   return (
@@ -53,7 +181,7 @@ export const DashboardOverview = () => {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] relative overflow-hidden">
           <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4"><FolderGit2 className="w-5 h-5"/></div>
           <ArrowUpRight className="absolute top-5 right-5 w-4 h-4 text-slate-300" />
-          <h2 className="text-3xl font-bold text-slate-800">{loadingStats ? "..." : (stats.proyek || 0)}</h2>
+          <h2 className="text-3xl font-bold text-slate-800">{loadingStats ? "..." : displayTotalProyek}</h2>
           <p className="text-sm text-slate-500 font-medium mt-1">Total Proyek</p>
         </div>
         
@@ -61,7 +189,7 @@ export const DashboardOverview = () => {
           <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mb-4"><TrendingUp className="w-5 h-5"/></div>
           <ArrowUpRight className="absolute top-5 right-5 w-4 h-4 text-slate-300" />
           <h2 className="text-3xl font-bold text-slate-800">
-            {loadingStats ? "..." : `Rp ${(keuangan.totalBudget / 1000000 || 0).toFixed(1)}M`}
+            {loadingStats ? "..." : `Rp ${(displayTotalBudget / 1000000 || 0).toFixed(1)}M`}
           </h2>
           <p className="text-sm text-slate-500 font-medium mt-1">Total Budget</p>
         </div>
@@ -69,14 +197,14 @@ export const DashboardOverview = () => {
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] relative overflow-hidden">
           <div className="w-10 h-10 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center mb-4"><AlertTriangle className="w-5 h-5"/></div>
           <ArrowUpRight className="absolute top-5 right-5 w-4 h-4 text-slate-300" />
-        <h2 className="text-3xl font-bold text-slate-800">{loadingStats || loadingActivities ? "..." : ((stats.risiko ?? 0) || totalRisks)}</h2>
+        <h2 className="text-3xl font-bold text-slate-800">{loadingStats || loadingActivities ? "..." : displayTotalRisks}</h2>
           <p className="text-sm text-slate-500 font-medium mt-1">Total Risiko</p>
         </div>
         
         <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.05)] relative overflow-hidden">
           <div className="w-10 h-10 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center mb-4"><CheckCircle2 className="w-5 h-5"/></div>
           <ArrowUpRight className="absolute top-5 right-5 w-4 h-4 text-slate-300" />
-          <h2 className="text-3xl font-bold text-slate-800">{loadingStats ? "..." : (stats.dokumen || 0)}</h2>
+          <h2 className="text-3xl font-bold text-slate-800">{loadingStats ? "..." : displayTotalDokumen}</h2>
           <p className="text-sm text-slate-500 font-medium mt-1">Total Deliverable</p>
         </div>
       </div>
@@ -234,8 +362,8 @@ export const DashboardOverview = () => {
           <div className="space-y-6">
             {loadingVendor ? (
                 <p className="text-xs text-slate-400 text-center py-10">Menghitung performa...</p>
-            ) : vendorData?.length > 0 ? (
-              vendorData.map((vendor: any, idx: number) => (
+            ) : vendorPerformance?.length > 0 ? (
+              vendorPerformance.map((vendor: any, idx: number) => (
                 <div key={idx} className="bg-slate-50/50 border border-slate-100 p-4 rounded-xl">
                     <div className="flex justify-between items-start mb-3">
                         <div>

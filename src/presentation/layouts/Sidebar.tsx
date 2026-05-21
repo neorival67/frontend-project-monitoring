@@ -32,7 +32,7 @@ const navGroups: NavGroup[] = [
     roles: ["ADMIN", "PM"], // Hanya ADMIN & PM yang bisa melihat Master Data
     items: [
       { label: "Client / Vendor", href: "/clients", icon: "🏢" },
-      { label: "Master Tim", href: "/master-tim", icon: "👥" },
+      { label: "Master User & Tim", href: "/master-tim", icon: "👥" },
     ],
   },
   {

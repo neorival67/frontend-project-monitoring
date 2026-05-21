@@ -15,7 +15,8 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
 
   const [formData, setFormData] = useState({
     name: "",
-    role: "",
+    role: "TIM",
+    position: "",
     email: "",
     phone: "",
     departemen: "Engineering",
@@ -30,7 +31,8 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
       if (isEdit && user) {
         setFormData({
           name: user.name || "",
-          role: user.role || "",
+          role: user.role || "TIM",
+          position: user.position || "",
           email: user.email || "",
           phone: user.phone || "",
           departemen: user.departemen || "Engineering",
@@ -45,7 +47,8 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
         // Reset form for add mode
         setFormData({
           name: "",
-          role: "",
+          role: "TIM",
+          position: "",
           email: "",
           phone: "",
           departemen: "Engineering",
@@ -93,6 +96,7 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
         status: formData.status,
         departemen: formData.departemen,
         phone: formData.phone,
+        position: formData.position,
        skills: formData.skills,
       };
       updateUser.mutate({ id: user.id, payload }, {
@@ -109,9 +113,10 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
       const payload: CreateUserPayload = {
         name: formData.name,
         email: formData.email,
-        role: formData.role || "STAFF",
+        role: formData.role || "TIM",
         departemen: formData.departemen,
         phone: formData.phone,
+        position: formData.position,
         skills: formData.skills,
       };
       createUser.mutate(payload, {
@@ -131,7 +136,7 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
     <div className="modal-overlay">
       <div className="modal-content modal-lg" style={{ maxWidth: '600px' }}>
         <div className="modal-header">
-          <h2 className="modal-title">{isEdit ? "Edit Anggota Tim" : "Tambah Anggota Tim"}</h2>
+          <h2 className="modal-title">{isEdit ? "Edit User" : "Tambah User"}</h2>
           <button className="modal-close-btn" onClick={onClose} type="button">✕</button>
         </div>
 
@@ -172,15 +177,31 @@ export function TeamModal({ user, onClose, onSuccess }: TeamModalProps) {
           </div>
 
           <div className="form-group">
-            <label>Jabatan / Role <span className="text-danger">*</span></label>
-            <input
-              type="text"
+            <label>Role <span className="text-danger">*</span></label>
+            <select
               name="role"
-              className="form-input"
+              className="form-input form-select"
               value={formData.role}
               onChange={handleChange}
-              placeholder="Backend Developer, PM, dll"
               required
+            >
+              <option value="ADMIN">ADMIN</option>
+              <option value="PM">PM</option>
+              <option value="VENDOR">VENDOR</option>
+              <option value="TIM">TIM</option>
+              <option value="CLIENT">CLIENT</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Posisi / Position</label>
+            <input
+              type="text"
+              name="position"
+              className="form-input"
+              value={formData.position}
+              onChange={handleChange}
+              placeholder="Backend Developer, UI/UX Designer, dll"
             />
           </div>
 

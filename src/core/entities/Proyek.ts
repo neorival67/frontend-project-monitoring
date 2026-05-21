@@ -82,7 +82,7 @@ export interface Aktivitas {
 }
 
 export type StatusAktivitas =
-  | "belum_dimulai"
+  | "Belum Mulai"
   | "berjalan"
   | "selesai"
   | "terlambat";
@@ -106,7 +106,7 @@ export interface LogAktivitasPayload {
   logDate: string; 
   progressAdded: number;
   costIncurred?: number | null; 
-  status: string; 
+  status: LogAktivitas; 
 }
 //deliverable
 export interface Deliverable {
@@ -119,8 +119,9 @@ export interface Deliverable {
   status: StatusDeliverable;
   createdAt: string;
   updatedAt: string;
-  attachments?: Attachment; 
+  attachments?: Attachment[]; 
   reviews?: ReviewApproval[];
+  submitter?: { id: string; name: string } | null;
 }
 export interface CreateDeliverablePayload {
   proyekId: string;        
@@ -164,7 +165,7 @@ export interface Attachment {
   createdAt: string;
 }
 
-export type StatusApproval = "APPROVED" | "REJECTED" ;
+export type StatusApproval = "APPROVED" | "REJECTED" | "PENDING" ;
 
 
 // closing proyek

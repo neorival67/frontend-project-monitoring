@@ -27,7 +27,8 @@ function getRoleBadgeClass(role: string): string {
   switch (role?.toUpperCase()) {
     case "ADMIN":  return "profile-role-badge role-admin";
     case "PM":     return "profile-role-badge role-pm";
-    case "STAFF":  return "profile-role-badge role-staff";
+    case "STAFF":
+    case "TIM":    return "profile-role-badge role-staff";
     case "CLIENT": return "profile-role-badge role-client";
     case "VENDOR": return "profile-role-badge role-vendor";
     default:       return "profile-role-badge role-default";
@@ -53,7 +54,7 @@ function translateStatus(status: string): string {
 }
 
 function isInternalRole(role: string): boolean {
-  return ["ADMIN", "PM", "STAFF"].includes(role?.toUpperCase());
+  return ["ADMIN", "PM", "TIM", "STAFF"].includes(role?.toUpperCase());
 }
 
 function isExternalRole(role: string): boolean {
@@ -183,10 +184,27 @@ export function ProfilePage() {
                 <rect width="20" height="14" x="2" y="7" rx="2" />
                 <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
               </svg>
-              Jabatan
+              Role
             </span>
             <span className="profile-field-value" id="profile-role">
               {isLoading ? "Memuat..." : displayRole}
+            </span>
+          </div>
+
+          <div className="profile-divider" />
+
+          {/* Posisi */}
+          <div className="profile-field">
+            <span className="profile-field-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="14" x="2" y="7" rx="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+              </svg>
+              Posisi
+            </span>
+            <span className="profile-field-value" id="profile-position">
+              {isLoading ? "Memuat..." : (user?.position || "—")}
             </span>
           </div>
 

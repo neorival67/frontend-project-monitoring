@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState , useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ChevronLeft, Calendar, User, FileText, CheckCircle2, Activity, Clock } from 'lucide-react';
 import { useProyekDetail } from '@/use-cases/hooks/useProyek';
@@ -18,6 +18,7 @@ import { ClientVendor, ClosingProyek } from '../../core/entities/Proyek';
 import { active } from 'd3';
 import { updateProyek } from '@/infrastructure/repositories/proyek.repo';
 
+
 export const ProjectDetailFeature = () => {
   const params = useParams();
   const router = useRouter();
@@ -25,9 +26,21 @@ export const ProjectDetailFeature = () => {
 
   const [activeTab, setActiveTab] = useState('overview');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  
+  useEffect(() => {
+    try {
+      const usr = localStorage.getItem("user");
+      if (usr) {
+        setCurrentUser(JSON.parse(usr));
+      }
+    } catch (e) {
+      console.error("Gagal mengambil session user:", e);
+    }
+  }, []);
 
   // Ambil role pengguna dari localStorage untuk keperluan otorisasi UI
-  let currentUserRole = "STAFF";
+  let currentUserRole = "TIM";
   try {
     const usr = localStorage.getItem("user");
     if (usr) {
@@ -122,13 +135,13 @@ export const ProjectDetailFeature = () => {
                   value={proyek.status?.toUpperCase() || "PERENCANAAN"}
                   onChange={handleStatusChange}
                   disabled={isUpdatingStatus}
-                  className="appearance-none w-full bg-white border border-slate-200 text-slate-700 py-2 px-4 pr-10 rounded-xl text-sm font-semibold shadow-sm hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
+                  className="appearance-none w-full bg-slate-800 border border-slate-700 text-slate-200 py-2 px-4 pr-10 rounded-xl text-sm font-semibold shadow-sm hover:border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <option value="INISIASI">Inisiasi</option>
-                  <option value="PERENCANAAN">Planning</option>
-                  <option value="PELAKSANAAN">Pelaksanaan</option>
-                  <option value="MONITORING">Monitoring</option>
-                  <option value="CLOSING">Closing</option>
+                  <option value="INISIASI" className="bg-slate-800 text-slate-200">Inisiasi</option>
+                  <option value="PERENCANAAN" className="bg-slate-800 text-slate-200">Planning</option>
+                  <option value="PELAKSANAAN" className="bg-slate-800 text-slate-200">Pelaksanaan</option>
+                  <option value="MONITORING" className="bg-slate-800 text-slate-200">Monitoring</option>
+                  <option value="CLOSING" className="bg-slate-800 text-slate-200">Closing</option>
                 </select>
                 
                 {/* Ikon panah kecil biar lebih cantik (Opsional) */}
@@ -199,7 +212,7 @@ export const ProjectDetailFeature = () => {
         {activeTab === 'approval' && (
           <TabApproval 
             activities={activities} 
-            currentUser={User} 
+            currentUser={currentUser} 
           />
         )}
 
@@ -213,6 +226,7 @@ export const ProjectDetailFeature = () => {
         {activeTab === 'closing' && (
           <TabClosingProyek
             proyekId={projectId}
+            proyekName={proyek.nama || proyek.name || 'Proyek'}
             initialActivities={activities}
           />
         )}

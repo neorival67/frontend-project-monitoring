@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { CheckCircle2, Clock, Upload, FileText, Check, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, Upload, FileText, Check, Loader2, Download } from "lucide-react";
 import AttachmentModal from "@/presentation/components/AttachmentModal";
 import type { Aktivitas } from "@/core/entities/Proyek"; 
 import { ClosingRepository } from "@/infrastructure/repositories/closing.repo";
@@ -11,11 +11,13 @@ import autoTable from "jspdf-autotable";
 
 interface TabClosingProyekProps {
   proyekId: string;
+  proyekName?: string;
   initialActivities: Aktivitas[];
 }
 
 export default function TabClosingProyek({
   proyekId,
+  proyekName = 'Proyek',
   initialActivities,
 }: TabClosingProyekProps) {
   const [activities, setActivities] = useState<Aktivitas[]>(initialActivities);
@@ -30,17 +32,44 @@ export default function TabClosingProyek({
     return new Set();
   });
   
-  useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(Array.from(verifiedIds)));
-  }, [verifiedIds, storageKey]);
-
-
   const [bastFileName, setBastFileName] = useState<string | null>(null);
+  const [bastFileUrl, setBastFileUrl] = useState<string | null>(null);
   const [isUploadingBast, setIsUploadingBast] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [modalContent, setModalContent] = useState({ title: "", message: "" })
+  const [modalContent, setModalContent] = useState({ title: "", message: "" });
+  const isClosedStorageKey = `is-project-closed-${proyekId}`;
+  const [isProjectClosed, setIsProjectClosed] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(isClosedStorageKey) === "true";
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(Array.from(verifiedIds)));
+  }, [verifiedIds, storageKey]);
+
+  useEffect(() => {
+    const fetchClosingData = async () => {
+      try {
+        const data = await ClosingRepository.getByProject(proyekId);
+        if (data && data.bastUrl) {
+          setBastFileUrl(data.bastUrl);
+          setBastFileName(data.bastFileName || 'BAST.pdf');
+        }
+        if (data && (data.status === 'FINAL' || data.status === 'CLOSED')) {
+          setIsProjectClosed(true);
+          localStorage.setItem(isClosedStorageKey, "true");
+        }
+      } catch (error) {
+        console.error("Gagal mengambil data closing proyek:", error);
+      }
+    };
+    fetchClosingData();
+  }, [proyekId]);
+
 
 
   // Kalkulasi Progress
@@ -64,8 +93,9 @@ export default function TabClosingProyek({
       setIsUploadingBast(true);
       
       try {
-        await ClosingRepository.uploadBast(proyekId, file);
+        const result = await ClosingRepository.uploadBast(proyekId, file);
         setBastFileName(file.name);
+        setBastFileUrl(result?.bastUrl || null);
         setModalContent({
           title: "Upload Berhasil",
           message: "Dokumen BAST sukses diunggah dan disimpan ke dalam sistem."
@@ -78,6 +108,25 @@ export default function TabClosingProyek({
         setIsUploadingBast(false);
         if (fileInputRef.current) fileInputRef.current.value = ""; 
       }
+    }
+  };
+
+  const handleDownloadBast = async () => {
+    if (!bastFileUrl) return;
+    try {
+      const response = await fetch(bastFileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = bastFileName || 'BAST.pdf';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Gagal mendownload BAST:', error);
+      window.open(bastFileUrl, '_blank');
     }
   };
 
@@ -116,7 +165,8 @@ export default function TabClosingProyek({
       styles: { fontSize: 9 },
    });
    
-    doc.save(`Laporan_Closing_${proyekId}.pdf`);
+    const fileName = `Laporan_Closing_${proyekName.replace(/\s+/g, '_')}.pdf`;
+    doc.save(fileName);
   };
 
   const handleSubmitClosing = async () => {
@@ -133,19 +183,14 @@ export default function TabClosingProyek({
       });
 
       if (response) {
-        localStorage.removeItem(storageKey);
-
-        generatePDFReport();
+        localStorage.setItem(isClosedStorageKey, "true");
         
         setModalContent({
           title: "Proyek Ditutup!",
           message: "Semua aktivitas telah diverifikasi dan proyek resmi dinyatakan selesai."
         });
         setIsSuccessModalOpen(true);
-
-        setTimeout(() => {
-          window.location.reload();
-        }, 2000);
+        setIsProjectClosed(true);
       }
     } catch (error: any) {
       const pesanBackend = error.response?.data?.message || error.response?.data?.error || error.message;
@@ -183,25 +228,42 @@ export default function TabClosingProyek({
 
       {/* Bagian Kanan: Tombol Lampiran */}
       <div className="flex items-center gap-3">
-          {/* Kalau udah keupload, tampilkan nama filenya */}
-          {bastFileName && (
-            <span className="text-xs font-semibold text-emerald-700 flex items-center gap-1 bg-emerald-100 px-2 py-1 rounded-md">
-              <FileText className="w-3 h-3" /> {bastFileName}
-            </span>
+          {bastFileName ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDownloadBast}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors shadow-sm"
+              >
+                <Download className="h-4 w-4" />
+                Download BAST
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingBast}
+                className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                {isUploadingBast ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600" />
+                ) : (
+                  <Upload className="h-3.5 w-3.5" />
+                )}
+                Ganti
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingBast}
+              className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              {isUploadingBast ? (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              Upload BAST
+            </button>
           )}
-          
-          <button
-            onClick={() => fileInputRef.current?.click()} 
-            disabled={isUploadingBast}
-            className="flex shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
-          >
-            {isUploadingBast ? (
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-            ) : (
-              <Upload className="h-4 w-4" />
-            )}
-            {bastFileName ? "Ganti BAST" : "Upload BAST"}
-          </button>
         </div>
     </div>
 
@@ -275,15 +337,26 @@ export default function TabClosingProyek({
     </div>
 
     {/* Submit Button (Muncul jika 100% verified) */}
-    {progressPercentage === 100 && (
+    {progressPercentage === 100 && !isProjectClosed && (
       <div className="mt-6 flex justify-end">
         <button
           onClick={handleSubmitClosing}
           className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
         >
-          Tutup Proyek & Generate Report
+          Tutup Proyek
         </button>
       </div>     
+    )}
+
+    {isProjectClosed && (
+      <div className="mt-6 flex justify-end">
+        <button
+          onClick={generatePDFReport}
+          className="rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+        >
+          Generate Laporan
+        </button>
+      </div>
     )}
 
     <SuccessClosingModal

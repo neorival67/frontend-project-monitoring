@@ -23,7 +23,11 @@ export function CreateProjectModal({ onClose }: CreateProjectModalProps) {
   const vendors = clientsData.filter((c: any) => c.type === "vendor" || c.tipe === "VENDOR" || c.tipe === "Vendor") || [];
   
   // Nggak pake kata "MOCK" lagi, murni dari API
-  const teamMembers = usersData?.data || usersData || [];
+  const allUsers = usersData?.data || usersData || [];
+  const teamMembers = allUsers.filter((u: any) => {
+    const role = (u.role || '').toUpperCase();
+    return role !== 'CLIENT' && role !== 'VENDOR';
+  });
 
   const [formData, setFormData] = useState<CreateProyekPayload>({
     nameProyek: "",

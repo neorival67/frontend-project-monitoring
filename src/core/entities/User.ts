@@ -11,6 +11,7 @@ export interface User {
   status: UserStatus;
   departemen?: string;
   phone?: string;
+  position?: string;
   skills?: string[];
   companyId?: string;
   createdAt?: string;
@@ -21,12 +22,12 @@ export interface UserApproval {
   ReviewerId: User;
   name: User;
   email: User;
-  role : User;
+  role : UserRole;
   status: User;
   companyId: User;
 }
 
-export type UserRole = "ADMIN" | "PM" | "VENDOR" | "STAFF" | "CLIENT";
+export type UserRole = "ADMIN" | "PM" | "VENDOR" | "TIM" | "CLIENT";
 
 export type UserStatus = "ACTIVE" | "PENDING" | "INACTIVE";
 
@@ -59,16 +60,18 @@ export interface CreateUserPayload {
   role: UserRole | string;
   departemen?: string;
   phone?: string;
+  position?: string;
   skills?: string[];
   companyId?: string;
 }
 
 export interface UpdateUserPayload {
   name?: string;
-  role?: UserRole | string;
+  role?: UserRole;
   status?: UserStatus | string;
   departemen?: string;
   phone?: string;
+  position?: string;
   skills?: string[];
   companyId?: string;
 }

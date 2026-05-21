@@ -7,7 +7,7 @@ import { SubmitDeliverable } from '@/presentation/components/SubmitDeliverable';
 import { ReviewApproval } from '@/presentation/components/ReviewApproval';
 import type { Aktivitas, Deliverable } from '@/core/entities/Proyek';
 import type { User } from '@/core/entities/User';
-import { User as UserIcon, X, CheckCircle, Plus, Loader2, FileText } from 'lucide-react';
+import { User as UserIcon, X, CheckCircle, Plus, Loader2, FileText, Download } from 'lucide-react';
 
 interface TabApprovalProps {
   activities: Aktivitas[];
@@ -30,14 +30,21 @@ export const TabApproval: React.FC<TabApprovalProps> = ({ activities, currentUse
   // -------------------------------------------------------------
   // VALIDASI POV (HAK AKSES)
   // -------------------------------------------------------------
-  const role = (currentUser?.role || '').toUpperCase();
+  const role = (currentUser.role || '').toUpperCase();
   
   // 1. Yang bisa Tambah/Upload: Vendor, Tim, PM, Admin
   //const canSubmit = ['vendor', 'tim', 'pm', 'project manager', 'admin','ADMIN','VENDOR','PM','TIM'].includes(role);
   
   // 2. Yang bisa Review/Approve: Client, Admin
-  const canReview = ['CLIENT', 'ADMIN'].includes(role);
+  
+  const canReview = ['CLIENT', 'ADMIN', 'client', 'admin'].includes(role);
   const canSubmit = true;
+
+  console.log("=== DEBUG TAB APPROVAL (LEVEL KOMPONEN) ===");
+  console.log("Data currentUser asli:", currentUser);
+  console.log("Role yang berhasil di-extract:", role);
+  console.log("Apakah punya akses canReview?:", canReview);
+  console.log("==========================================");
 
   const fetchDeliverables = async () => {
     if (!proyekId) return;
@@ -49,6 +56,25 @@ export const TabApproval: React.FC<TabApprovalProps> = ({ activities, currentUse
       console.error("Gagal mengambil data approval:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDownload = async (fileUrl: string, fileName: string) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Gagal mendownload file:', error);
+      // Fallback: open in new tab
+      window.open(fileUrl, '_blank');
     }
   };
 
@@ -97,6 +123,12 @@ export const TabApproval: React.FC<TabApprovalProps> = ({ activities, currentUse
               'Tahapan Proyek';
  
             const latestReview = item.reviews?.[0];
+
+            console.log(`--- DEBUG ITEM: ${item.title} ---`);
+            console.log("Status dokumen saat ini:", status);
+            console.log("Apakah status BUKAN APPROVED?:", status !== 'APPROVED');
+            console.log("Apakah tombol harusnya muncul? (canReview && status !== 'APPROVED'):", canReview && status !== 'APPROVED');
+            console.log("-----------------------------------------");
  
             return (
               <div key={item.id} className="bg-white border border-slate-200 rounded-xl p-5 hover:border-slate-300 transition-colors">
@@ -138,14 +170,13 @@ export const TabApproval: React.FC<TabApprovalProps> = ({ activities, currentUse
                     {item.attachments.map((att) => (
                       <div key={att.id} className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-rose-500 shrink-0" />
-                        <a
-                          href={att.fileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-sm font-semibold text-rose-600 hover:underline"
+                        <button
+                          onClick={() => handleDownload(att.fileUrl, att.fileName || 'Dokumen')}
+                          className="text-sm font-semibold text-rose-600 hover:underline flex items-center gap-1.5 cursor-pointer"
                         >
                           {att.fileName || 'Dokumen'}
-                        </a>
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -188,7 +219,7 @@ export const TabApproval: React.FC<TabApprovalProps> = ({ activities, currentUse
         isOpen={isReviewOpen}
         onClose={() => { setIsReviewOpen(false); setSelectedItem(null); }}
         deliverable={selectedItem}
-        reviewerId={currentUser?.id || ''}
+        reviewerId={currentUser.id}
         onSuccess={fetchDeliverables}
       />
     </div>

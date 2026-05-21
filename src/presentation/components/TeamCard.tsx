@@ -56,7 +56,9 @@ export function TeamCard({ user, onEdit, onDelete }: TeamCardProps) {
         </div>
         <div className="tc-info">
           <div className="tc-name" title={user.name}>{user.name}</div>
-          <div className="tc-role">{user.role}</div>
+          <div className="tc-role">
+            {user.role} {user.position ? `— ${user.position}` : ''}
+          </div>
         </div>
       </div>
 
