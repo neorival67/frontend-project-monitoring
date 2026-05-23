@@ -17,13 +17,11 @@ export function CreateProjectModal({ onClose }: CreateProjectModalProps) {
   const { data: usersData, isLoading: isUsersLoading } = useSemuaUser(); 
   const createProyek = useCreateProyek();
 
-  // Mapping data API (Aman dari undefined)
   const clientsData = clientsAndVendors || [];
   const clients = clientsData.filter((c: any) => c.type === "client" || c.tipe === "CLIENT" || c.tipe === "Client") || [];
   const vendors = clientsData.filter((c: any) => c.type === "vendor" || c.tipe === "VENDOR" || c.tipe === "Vendor") || [];
   
-  // Nggak pake kata "MOCK" lagi, murni dari API
-  const allUsers = usersData?.data || usersData || [];
+  const allUsers = usersData || [];
   const teamMembers = allUsers.filter((u: any) => {
     const role = (u.role || '').toUpperCase();
     return role !== 'CLIENT' && role !== 'VENDOR';

@@ -54,8 +54,7 @@ export const ProjectDetailFeature = () => {
   // TARIK DATA API
   const { data: response, isLoading } = useProyekDetail(projectId);
 
-  const rawData = response?.data?.data || response?.data || response || {};
-  const proyek = rawData.proyek || rawData; 
+  const proyek = (response as any)?.proyek || response || {};
 
   if (isLoading) {
     return (
@@ -191,8 +190,6 @@ export const ProjectDetailFeature = () => {
           <TabOverview 
             proyek={proyek} 
             activities={activities} 
-            team={team} 
-            ClientName = {clientName}
             risks={risks} 
             deliverables={deliverables} 
           />

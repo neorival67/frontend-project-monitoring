@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity, User, BarChart3 } from 'lucide-react';
-import type { Proyek, Aktivitas, PenilaianResiko, Deliverable } from '@/core/entities/Proyek'; 
+import type { Proyek, Aktivitas, Deliverable } from '@/core/entities/Proyek'; 
+import type { PenilaianResiko } from '@/core/entities/Risk';
 import { ProjectDetailsChart, type ChartDataItem } from '@/presentation/components/ProjectDetailsChart';
 interface TabOverviewProps {
   proyek: Proyek;
@@ -27,7 +28,7 @@ export const TabOverview: React.FC<TabOverviewProps> = ({
     : (activities.length > 0 ? Math.round((completedActivities / activities.length) * 100) : 0);
 
   // 2. Kalkulasi Risiko
-  const criticalRisks = risks.filter((r) => r.tingkat === 'kritis').length;
+  const criticalRisks = risks.filter((r: any) => r.level === 'CRITICAL').length;
 
   // 3. Kalkulasi Deliverables
 const approvedDeliverables = deliverables.filter((d) => {
