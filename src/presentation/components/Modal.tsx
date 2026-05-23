@@ -34,7 +34,6 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       className="modal-dialog"
       onClose={onClose}
       onClick={(e) => {
-        // Tutup modal jika klik di backdrop
         if (e.target === dialogRef.current) {
           onClose();
         }

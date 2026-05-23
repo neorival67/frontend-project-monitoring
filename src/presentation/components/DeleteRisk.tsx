@@ -20,7 +20,6 @@ export const DeleteRisk: React.FC<DeleteRiskProps> = ({ isOpen, onClose, riskId,
   const handleDelete = async () => {
     setIsLoading(true);
     try {
-      // Gunakan repo untuk konsistensi kode
       await RiskRepository.deleteRisk(riskId);
       onSuccess();
       onClose();

@@ -5,8 +5,8 @@ import * as d3 from "d3";
 
 export interface ChartDataItem {
   name: string;
-  budget: number;    // Dalam Juta
-  realisasi: number; // dalam juta
+  budget: number;    
+  realisasi: number; 
 }
 
 interface ProjectDetailsChartProps {
@@ -112,7 +112,6 @@ export const ProjectDetailsChart: React.FC<ProjectDetailsChartProps> = ({ data }
           `);
       })
       .on("mousemove", function (event) {
-        // Ambil posisi relatif dari parent container
         const [xPos, yPos] = d3.pointer(event, chartRef.current?.parentElement);
         tooltip
           .style("left", `${xPos + 15}px`)

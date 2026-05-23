@@ -25,7 +25,7 @@ export const CreateRisk: React.FC<CreateRiskProps> = ({ isOpen, onClose, proyekI
     mitigation: ''
   });
 
-  // Kalkulasi Skor Lokal (Sekadar untuk UI Preview)
+  // calculate score
   const riskScore = formData.probability * formData.impact;
   const riskLevel = useMemo(() => {
     if (riskScore >= 15) return { label: 'CRITICAL', color: 'text-rose-600', bg: 'bg-rose-50 border-rose-200' };
@@ -49,7 +49,6 @@ export const CreateRisk: React.FC<CreateRiskProps> = ({ isOpen, onClose, proyekI
     setIsLoading(true);
 
     try {
-      // Kita kirimkan payload tanpa status, level, skor (karena Backend yg olah)
       await RiskRepository.createRisk({
         proyekId,
         riskName: formData.riskName,

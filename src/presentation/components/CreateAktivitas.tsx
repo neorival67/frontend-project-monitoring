@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-// Sesuaikan path import-nya dengan struktur folder lu
 import { createAktivitas } from "@/infrastructure/repositories/proyek.repo";
 import type { StatusAktivitas, Aktivitas } from "@/core/entities/Proyek";
 
@@ -11,7 +10,7 @@ interface CreateAktivitasProps {
   onClose: () => void;
   proyekId: string;
   teamMembers: Array<{ id: string; name: string; role?: string }>;
-  onSuccess: () => void; // Trigger untuk me-refresh data tabel setelah sukses
+  onSuccess: () => void; 
 }
 
 export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClose, proyekId, teamMembers, onSuccess }) => {
@@ -25,7 +24,7 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
     category: 'Development',
     progress: 0,
     status: 'Belum Mulai',
-    weight: 10, // Default weight jika tidak ada di UI
+    weight: 10,  
     assignees: [] as string[]
   });
 
@@ -53,28 +52,24 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
     try {
       setIsLoading(true);
 
-      // Siapkan payload dengan format tanggal ISO
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      
       const { assignees, ...rest } = formData;
-      const payload = {
+      const payload: Record<string, unknown> = {
         ...rest,
         status: formData.status as StatusAktivitas,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-        assignees, // kirim sebagai string[] (array of user IDs) ke backend
+        assignees,
       };
 
-      // Panggil fungsi dari repo (nggak perlu nulis endpoint URL lagi!)
       await createAktivitas(proyekId, payload as Partial<Aktivitas>);
 
-      // Kalau sukses ngelewatin baris atas tanpa masuk catch:
-      onSuccess(); // Refresh tabel
-      onClose();   // Tutup modal
+      onSuccess(); // Refresh table
+      onClose();   // close modal
 
     } catch (error: any) {
       console.error("Error creating aktivitas:", error);
       
-      // Bisa nampilin error message dari backend NestJS kalau ada
       const errorMsg = error.response?.data?.message || "Terjadi kesalahan sistem";
       alert(`Gagal menambahkan aktivitas: ${errorMsg}`);
       

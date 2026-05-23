@@ -40,7 +40,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({ activities }) => {
   }, [activities]);
 
   const { days, startDate } = timeline;
-  // menghitung posisi (offset) dan lebar bar berdasarkan tanggal
   const getBarStyles = (startStr?: string, endStr?: string) => {
     if (!startStr || !endStr) return { left: '0%', width: '0%', display: 'none' };
 
@@ -54,7 +53,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({ activities }) => {
 
     const totalMsInDay = 1000 * 60 * 60 * 24;
     const offsetDays = (start.getTime() - startDate.getTime()) / totalMsInDay;
-    const durationDays = (end.getTime() - start.getTime()) / totalMsInDay + 1; // +1 agar inklusif
+    const durationDays = (end.getTime() - start.getTime()) / totalMsInDay + 1; 
 
     return {
       left: `${(offsetDays / days.length) * 100}%`,
@@ -69,10 +68,9 @@ export const GanttChart: React.FC<GanttChartProps> = ({ activities }) => {
     if (safeStatus === 'selesai' || progres === 100) return 'bg-emerald-500';
     if (safeStatus === 'terlambat') return 'bg-rose-500';
     if (safeStatus === 'berjalan') return 'bg-blue-500';
-    return 'bg-slate-300'; // Belum mulai
+    return 'bg-slate-300';
   };
 
-  // Kelompokkan bulan untuk Header Timeline
   const months = days.reduce((acc, curr) => {
     if (!acc.includes(curr.monthStr)) acc.push(curr.monthStr);
     return acc;
@@ -98,7 +96,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({ activities }) => {
             const currentProgress = act.progress ?? 0;
             const statusColor = getStatusColor(act.status, currentProgress);
             
-            // PERBAIKAN: Ambil nama dari array assignees, bukan hardcode "Tim Proyek"
             const assigneesText = act.assignees && act.assignees.length > 0 
               ? act.assignees.map((user: any) => user.name).join(', ') 
               : 'Belum ada tim';
@@ -149,7 +146,6 @@ export const GanttChart: React.FC<GanttChartProps> = ({ activities }) => {
 
             {/* Activity Bars */}
             {activities.map((act, i) => {
-              // PERBAIKAN: Gunakan startDate dan dueDate
               const { left, width, display } = getBarStyles(act.startDate, act.dueDate);
               const currentProgress = act.progress ?? 0;
               const barColor = getStatusColor(act.status, currentProgress);

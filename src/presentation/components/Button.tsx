@@ -1,10 +1,5 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 
-/**
- * Dumb Component: Button
- * Komponen tombol yang bisa dipakai ulang di seluruh aplikasi.
- */
-
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "danger" | "ghost";
   size?: "sm" | "md" | "lg";
