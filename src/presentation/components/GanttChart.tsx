@@ -40,6 +40,7 @@ export const GanttChart: React.FC<GanttChartProps> = ({ activities }) => {
   }, [activities]);
 
   const { days, startDate } = timeline;
+  // menghitung posisi (offset) dan lebar bar berdasarkan tanggal
   const getBarStyles = (startStr?: string, endStr?: string) => {
     if (!startStr || !endStr) return { left: '0%', width: '0%', display: 'none' };
 

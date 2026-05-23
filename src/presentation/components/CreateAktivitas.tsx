@@ -52,17 +52,14 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
     try {
       setIsLoading(true);
 
-      
-      const { assignees, ...rest } = formData;
-      const payload: Record<string, unknown> = {
-        ...rest,
+      const payload: Partial<Aktivitas> = {
+        ...formData,
         status: formData.status as StatusAktivitas,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-        assignees,
       };
 
-      await createAktivitas(proyekId, payload as Partial<Aktivitas>);
+      await createAktivitas(proyekId, payload);
 
       onSuccess(); // Refresh table
       onClose();   // close modal

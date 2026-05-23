@@ -1,19 +1,17 @@
-/**
- * Entity: User
- * Representasi pengguna dalam sistem monitoring proyek.
- */
-
 export interface User {
   id: string;
   name: string;
   email: string;
+  password?: string;
   role: UserRole;
-  status: UserStatus;
-  departemen?: string;
-  phone?: string;
   position?: string;
-  skills?: string[];
-  companyId?: string;
+  departemen?: Departemen | string;
+  status: UserStatus;
+  phone?: string;
+  skills?: string[] | Record<string, unknown>;
+  invitationToken?: string | null;
+  companyId?: string | null;
+  company?: { id: string; name: string; type?: string };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -22,7 +20,7 @@ export interface UserApproval {
   ReviewerId: User;
   name: User;
   email: User;
-  role : UserRole;
+  role: UserRole;
   status: User;
   companyId: User;
 }
@@ -31,10 +29,15 @@ export type UserRole = "ADMIN" | "PM" | "VENDOR" | "TIM" | "CLIENT";
 
 export type UserStatus = "ACTIVE" | "PENDING" | "INACTIVE";
 
-/** Role yang diizinkan mendaftar mandiri */
-export type RegisterableRole = Extract<UserRole, "ADMIN" | "PM">;
+export type Departemen =
+  | "Engineering"
+  | "Design"
+  | "Business"
+  | "QA"
+  | "PMO"
+  | "Lainnya";
 
-// ── Auth Request Types ───────────────────────────────────────────────
+export type RegisterableRole = Extract<UserRole, "ADMIN" | "PM">;
 
 export interface LoginCredentials {
   email: string;
@@ -76,8 +79,6 @@ export interface UpdateUserPayload {
   companyId?: string;
 }
 
-// ── Auth Response Types ──────────────────────────────────────────────
-
 export interface LoginResponse {
   accessToken: string;
   user: User;
@@ -96,8 +97,6 @@ export interface AcceptInviteResponse {
   message: string;
   user: User;
 }
-
-// ── API Error Response ───────────────────────────────────────────────
 
 export interface ApiErrorResponse {
   statusCode: number;

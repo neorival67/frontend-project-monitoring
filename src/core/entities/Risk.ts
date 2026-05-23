@@ -1,5 +1,3 @@
-// core/entities/Risk.ts
-
 import type { User } from "./User";
 
 export interface PenilaianResiko {
@@ -8,11 +6,12 @@ export interface PenilaianResiko {
   riskName: string;
   kategori?: string | null;
   ownerId?: string | null;
-  owner?: User | null; // Relasi ke User
+  owner?: User | null;
+  status: string;
   impact: number;
   probability: number;
   score: number;
-  level: string; // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  level: string;
   mitigation?: string | null;
   createdAt: string;
   updatedAt: string;

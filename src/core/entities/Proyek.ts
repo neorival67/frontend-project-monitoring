@@ -1,41 +1,59 @@
 import type { User } from "./User";
-// clientvendor
+
 export interface ClientVendor {
   id: string;
-  nama: string;
-  tipe: "client" | "vendor";
-  kontak: string;
-  email: string;
-  alamat?: string;  
+  type: string;
+  status: string;
+  industry?: string;
+  name: string;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  users?: User[];
+  createdAt: string;
+  updatedAt: string;
+
+  nama?: string;
+  tipe?: string;
+  kontak?: string;
+  alamat?: string;
 }
-//projectteam
+
 export interface ProyekTeamMember {
   id: string;
   proyekId: string;
   userId: string;
+  teamId?: string | null;
   roleInProject?: string | null;
   user?: User;
 }
-//project
+
 export interface Proyek {
   id: string;
   name: string;
-  description: string;
-  objective: string;
+  description?: string;
+  objective?: string;
   status: StatusProyek;
   startDate: string;
   endDate: string;
   budget: string | number;
   clientId: string;
-  createdAt: string;
-  updatedAt: string;
   client?: ClientVendor;
   vendors?: ClientVendor[];
   teams?: ProyekTeamMember[];
   activities?: Aktivitas[];
-  
-  // UI Specific or computed fields (can be optional if not from API)
+  deliverables?: Deliverable[];
+  closing?: ClosingProyek;
+  createdAt: string;
+  updatedAt: string;
+
+  nama?: string;
+  deskripsi?: string;
+  tanggalMulai?: string;
+  tanggalSelesai?: string;
   progres?: number;
+  clientName?: string;
 }
 
 export interface CreateProyekPayload {
@@ -51,99 +69,108 @@ export interface CreateProyekPayload {
   teamMemberIds: string[];
 }
 
-
 export type StatusProyek =
   | "inisiasi"
   | "perencanaan"
   | "pelaksanaan"
   | "penutupan"
+  | "INISIASI"
   | "ONGOING"
   | "berjalan"
   | "selesai"
   | "terhenti"
   | string;
-//activity
+
 export interface Aktivitas {
   id: string;
   proyekId: string;
-  nama: string;
-  deskripsi: string;
-  category: string;
+  name: string;
+  description?: string;
   status: StatusAktivitas;
-  tanggalMulai: string;
-  tanggalSelesai: string;
-  weight: number;
+  startDate?: string;
+  dueDate?: string;
+  category?: string;
+  weight?: number;
   progress: number;
-  budget: number;
-  assignees?: User[];
+  budget?: number | string;
+  assignees?: (User | string)[];
   logs?: LogAktivitas[];
+  deliverables?: Deliverable[];
   createdAt: string;
   updatedAt: string;
+
+  nama?: string;
+  deskripsi?: string;
+  tanggalMulai?: string;
+  tanggalSelesai?: string;
 }
 
 export type StatusAktivitas =
   | "Belum Mulai"
   | "berjalan"
   | "selesai"
-  | "terlambat";
-//logactivity
+  | "terlambat"
+  | string;
+
 export interface LogAktivitas {
   id: string;
   aktivitasId: string;
   userId: string;
-  description: string;   
-  logDate: string;      
-  progressAdded: number; 
-  costIncurred?: string | number; // Dari Prisma (buat hitung Realisasi chart)
+  user?: User;
+  logDate?: string;
+  description: string;
+  progressAdded: number;
+  costIncurred?: string | number;
   status: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface LogAktivitasPayload {
   aktivitasId: string;
   userId: string;
   description: string;
-  logDate: string; 
+  logDate?: string;
   progressAdded: number;
-  costIncurred?: number | null; 
-  status: LogAktivitas; 
+  costIncurred?: number | null;
+  status: string;
 }
-//deliverable
+
 export interface Deliverable {
-  reviewApproval: ReviewApproval;
   id: string;
-  proyekId: string;        
+  proyekId: string;
   aktivitasId?: string | null;
-  title: string;           
+  title: string;
   description?: string | null;
   status: StatusDeliverable;
+  submitterId?: string | null;
+  submitter?: { id: string; name: string } | null;
+  attachments?: Attachment[];
+  reviews?: ReviewApproval[];
+  reviewApproval?: ReviewApproval;
   createdAt: string;
   updatedAt: string;
-  attachments?: Attachment[]; 
-  reviews?: ReviewApproval[];
-  submitter?: { id: string; name: string } | null;
 }
+
 export interface CreateDeliverablePayload {
-  proyekId: string;        
+  proyekId: string;
   aktivitasId?: string;
-  title: string;           
+  title: string;
   description?: string;
 }
 
 export type StatusDeliverable =
-  | "SUBMITTED"   
+  | "SUBMITTED"
   | "APPROVED"
   | "REJECTED"
   | string;
- 
 
-//approval
 export interface ReviewApproval {
   id: string;
   deliverableId: string;
   reviewerId: string;
   status: StatusApproval;
-  comments?: string | null; 
+  comments?: string | null;
   reviewDate: string;
   reviewer?: User;
   deliverable?: Deliverable;
@@ -165,24 +192,22 @@ export interface Attachment {
   createdAt: string;
 }
 
-export type StatusApproval = "APPROVED" | "REJECTED" | "PENDING" ;
+export type StatusApproval = "APPROVED" | "REJECTED" | "PENDING";
 
-
-// closing proyek
 export interface ClosingProyek {
   id: string;
   proyekId: string;
+  bastUrl?: string | null;
+  bastFileName?: string | null;
   finalReportUrl?: string | null;
   handoverDate?: string | null;
   notes?: string | null;
   status: string;
-  bastUrl: string; 
-  bastFileName: string;         
   createdAt: string;
   updatedAt: string;
   proyek?: Proyek;
 }
- 
+
 export interface CreateClosingPayload {
   proyekId: string;
   handoverDate?: string;
