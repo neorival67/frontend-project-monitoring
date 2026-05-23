@@ -8,7 +8,7 @@ import { Deliverable} from '@/core/entities';
 interface ReviewApprovalProps {
   isOpen: boolean;
   onClose: () => void;
-  deliverable: Deliverable; 
+  deliverable: Deliverable | null; 
   reviewerId: string;
   onSuccess: () => void;
 }
@@ -25,8 +25,7 @@ export const ReviewApproval: React.FC<ReviewApprovalProps> = ({ isOpen, onClose,
         const payload = {
             deliverableId: deliverable.id,
             status: status,
-            //reviewerId: reviewerId,
-            //reviewerId: '0c8ffe38-581a-45d5-8441-4b50f37838bb',
+            reviewerId: reviewerId,
             comments: comments || "",
         }
       await ApprovalRepository.reviewDeliverable(deliverable.id, payload)

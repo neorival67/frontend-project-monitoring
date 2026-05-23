@@ -70,7 +70,7 @@ export interface CreateUserPayload {
 
 export interface UpdateUserPayload {
   name?: string;
-  role?: UserRole;
+  role?: UserRole | string;
   status?: UserStatus | string;
   departemen?: string;
   phone?: string;

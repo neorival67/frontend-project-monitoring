@@ -1,8 +1,7 @@
 import React from 'react';
 import { Plus, Edit2, Trash2, Calendar, AlertTriangle, ListTodo } from 'lucide-react';
-import type { Proyek, Aktivitas, PenilaianResiko } from '@/core/entities/Proyek';
-
-// Import komponen GanttChart yang baru kita buat
+import type { Proyek, Aktivitas} from '@/core/entities/Proyek';
+import { PenilaianResiko } from '@/core/entities';
 import { GanttChart } from '@/presentation/components/GanttChart';
 import { useState } from 'react';
 import { CreateAktivitas } from '@/presentation/components/CreateAktivitas';
