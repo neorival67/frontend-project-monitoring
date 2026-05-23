@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 // Sesuaikan path import-nya dengan struktur folder lu
 import { createAktivitas } from "@/infrastructure/repositories/proyek.repo";
+import type { StatusAktivitas } from "@/core/entities/Proyek";
 
 interface CreateAktivitasProps {
   isOpen: boolean;
@@ -55,6 +56,7 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
       // Siapkan payload dengan format tanggal ISO
       const payload = {
         ...formData,
+        status: formData.status as StatusAktivitas,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
       };
@@ -144,9 +146,9 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
                 <label className="block text-xs font-semibold text-slate-600 mb-1.5">Status</label>
                 <select name="status" value={formData.status} onChange={handleChange} className="w-full border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 outline-none focus:border-blue-500 bg-white">
                   <option value="Belum Mulai">Belum Mulai</option>
-                  <option value="Berjalan">Berjalan</option>
-                  <option value="Selesai">Selesai</option>
-                  <option value="Terlambat">Terlambat</option>
+                  <option value="berjalan">Berjalan</option>
+                  <option value="selesai">Selesai</option>
+                  <option value="terlambat">Terlambat</option>
                 </select>
               </div>
             </div>
