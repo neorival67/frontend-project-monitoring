@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 // Sesuaikan path import-nya dengan struktur folder lu
 import { createAktivitas } from "@/infrastructure/repositories/proyek.repo";
-import type { StatusAktivitas } from "@/core/entities/Proyek";
+import type { StatusAktivitas, Aktivitas } from "@/core/entities/Proyek";
 
 interface CreateAktivitasProps {
   isOpen: boolean;
@@ -54,15 +54,18 @@ export const CreateAktivitas: React.FC<CreateAktivitasProps> = ({ isOpen, onClos
       setIsLoading(true);
 
       // Siapkan payload dengan format tanggal ISO
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { assignees, ...rest } = formData;
       const payload = {
-        ...formData,
+        ...rest,
         status: formData.status as StatusAktivitas,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : undefined,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
+        assignees, // kirim sebagai string[] (array of user IDs) ke backend
       };
 
       // Panggil fungsi dari repo (nggak perlu nulis endpoint URL lagi!)
-      await createAktivitas(proyekId, payload);
+      await createAktivitas(proyekId, payload as Partial<Aktivitas>);
 
       // Kalau sukses ngelewatin baris atas tanpa masuk catch:
       onSuccess(); // Refresh tabel
